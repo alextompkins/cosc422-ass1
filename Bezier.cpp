@@ -16,7 +16,6 @@
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "CubePatches.h"
 
 using namespace std;
 
@@ -25,6 +24,9 @@ GLuint matrixLoc;
 float angle = 0.0;
 glm::mat4 projView;
 float CDR = 3.14159265 / 180.0;   // Conversion from degrees to radians (required in GLM 0.9.6 and later versions)
+
+int numVertices;
+float* vertices;
 
 GLuint loadShader(GLenum shaderType, const string& filename) {
 	ifstream shaderFile(filename.c_str());
@@ -52,18 +54,38 @@ GLuint loadShader(GLenum shaderType, const string& filename) {
 	return shader;
 }
 
+int readVertices(const string &filename) {
+    ifstream infile;
+    infile.open(filename, ios::in);
+
+    infile >> numVertices;
+
+    vertices = new float[numVertices * 3];
+
+    for (int i = 0; i < numVertices; i++) {
+        infile >> vertices[i * 3]
+               >> vertices[i * 3 + 1]
+               >> vertices[i * 3 + 2];
+    }
+    return numVertices;
+}
+
+void freeVertices() {
+    delete[] vertices;
+    vertices = NULL;
+}
 
 void initialise() {
 	glm::mat4 proj, view;
 	GLuint shaderVert = loadShader(GL_VERTEX_SHADER, "shaders/Bezier.vert");
 	GLuint shaderFrag = loadShader(GL_FRAGMENT_SHADER, "shaders/Bezier.frag");
-	GLuint shaderTessCont = loadShader(GL_TESS_CONTROL_SHADER, "shaders/Bezier.tesc");
+//	GLuint shaderTessCont = loadShader(GL_TESS_CONTROL_SHADER, "shaders/Bezier.tesc");
 	GLuint shaderTessEval = loadShader(GL_TESS_EVALUATION_SHADER, "shaders/Bezier.tese");
 
 	GLuint program = glCreateProgram();
 	glAttachShader(program, shaderVert);
 	glAttachShader(program, shaderFrag);
-	glAttachShader(program, shaderTessCont);
+//	glAttachShader(program, shaderTessCont);
 	glAttachShader(program, shaderTessEval);
 	glLinkProgram(program);
 
@@ -84,20 +106,20 @@ void initialise() {
 	view = glm::lookAt(glm::vec3(0.0, 5.0, 12.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0)); //view matrix
 	projView = proj * view;  //Product matrix
 
-	GLuint vboID[4];
+	GLuint vboID[1];
 
 	glGenVertexArrays(1, &vaoID);
 	glBindVertexArray(vaoID);
 
-	glGenVertexArrays(2, vboID);
+	glGenVertexArrays(1, vboID);
+
+    numVertices = readVertices("geom/PatchVerts_Gumbo.txt");
+    // 4x4 bezier patches (16 vertices per patch)
 
 	glBindBuffer(GL_ARRAY_BUFFER, vboID[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(0);  // Vertex position
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elems), elems, GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
 
@@ -122,7 +144,7 @@ void display() {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBindVertexArray(vaoID);
-	glDrawElements(GL_PATCHES, 24, GL_UNSIGNED_SHORT, NULL);
+	glDrawArrays(GL_PATCHES, 0, numVertices);
 
 	glPatchParameteri(GL_PATCH_VERTICES, 4);
 
