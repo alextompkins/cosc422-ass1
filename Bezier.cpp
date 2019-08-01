@@ -23,7 +23,7 @@ using namespace std;
 #define TO_RAD (3.14159265f/180.0f)
 
 GLuint vaoID;
-GLuint matrixLoc;
+GLuint mvpMatrixLoc, tessLevelLoc;
 glm::mat4 projView;
 
 int numVertices;
@@ -123,6 +123,9 @@ void initialise() {
 
 	glUseProgram(program);
 
+	mvpMatrixLoc = glGetUniformLocation(program, "mvpMatrix");
+	tessLevelLoc = glGetUniformLocation(program, "tessLevel");
+
 	GLuint vboID;
 
 	glGenVertexArrays(1, &vaoID);
@@ -131,7 +134,7 @@ void initialise() {
 	glGenBuffers(1, &vboID);
 
     // 4x4 bezier patches (16 vertices per patch)
-    numVertices = readVertices("geom/PatchVerts_Gumbo.txt");
+    numVertices = readVertices("geom/PatchVerts_Teapot.txt");
     long sizeOfVertices = sizeof(float) * numVertices * 3;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vboID);
@@ -146,7 +149,7 @@ void initialise() {
 
     glPatchParameteri(GL_PATCH_VERTICES, 16);
 
-    initCamera(true);
+    initCamera(false);
 }
 
 void calcProjView() {
@@ -157,13 +160,28 @@ void calcProjView() {
             glm::vec3(0.0, 1.0, 0.0)); // up vector
     projView = proj * view;
 
-    glUniformMatrix4fv(matrixLoc, 1, GL_FALSE, &projView[0][0]);
+    glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &projView[0][0]);
+}
+
+void setTessLevel() {
+    int tessLevel;
+    if (eyePos.rad > 25) {
+        tessLevel = 2;
+    } else if (eyePos.rad > 10) {
+        tessLevel = 4;
+    } else if (eyePos.rad > 5) {
+        tessLevel = 8;
+    } else {
+        tessLevel = 16;
+    }
+    glUniform1i(tessLevelLoc, tessLevel);
 }
 
 void display() {
     cout << "eyePos: " << eyePos.angle << " " << eyePos.height << " " <<  eyePos.rad << endl;
     cout << "lookAtHeight: " << lookAtHeight << endl;
     calcProjView();
+    setTessLevel();
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDrawArrays(GL_PATCHES, 0, numVertices);
