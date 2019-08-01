@@ -67,6 +67,8 @@ int readVertices(const string &filename) {
                >> vertices[i * 3 + 1]
                >> vertices[i * 3 + 2];
     }
+
+    infile.close();
     return numVertices;
 }
 
@@ -79,13 +81,13 @@ void initialise() {
 	glm::mat4 proj, view;
 	GLuint shaderVert = loadShader(GL_VERTEX_SHADER, "shaders/Bezier.vert");
 	GLuint shaderFrag = loadShader(GL_FRAGMENT_SHADER, "shaders/Bezier.frag");
-//	GLuint shaderTessCont = loadShader(GL_TESS_CONTROL_SHADER, "shaders/Bezier.tesc");
+	GLuint shaderTessCont = loadShader(GL_TESS_CONTROL_SHADER, "shaders/Bezier.tesc");
 	GLuint shaderTessEval = loadShader(GL_TESS_EVALUATION_SHADER, "shaders/Bezier.tese");
 
 	GLuint program = glCreateProgram();
 	glAttachShader(program, shaderVert);
 	glAttachShader(program, shaderFrag);
-//	glAttachShader(program, shaderTessCont);
+	glAttachShader(program, shaderTessCont);
 	glAttachShader(program, shaderTessEval);
 	glLinkProgram(program);
 
@@ -103,7 +105,7 @@ void initialise() {
 
 
 	proj = glm::perspective(20.0f * CDR, 1.0f, 10.0f, 1000.0f);  //perspective projection matrix
-	view = glm::lookAt(glm::vec3(0.0, 5.0, 12.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0)); //view matrix
+	view = glm::lookAt(glm::vec3(0.0, 10.0, 20.0), glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 1.0, 0.0)); //view matrix
 	projView = proj * view;  //Product matrix
 
 	GLuint vboID[1];
@@ -111,13 +113,15 @@ void initialise() {
 	glGenVertexArrays(1, &vaoID);
 	glBindVertexArray(vaoID);
 
-	glGenVertexArrays(1, vboID);
+//	glGenVertexArrays(1, vboID);
+	glGenBuffers(1, vboID);
 
-    numVertices = readVertices("geom/PatchVerts_Gumbo.txt");
     // 4x4 bezier patches (16 vertices per patch)
+    numVertices = readVertices("geom/PatchVerts_Teapot.txt");
+    long sizeOfVertices = sizeof(float) * numVertices * 3;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vboID[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeOfVertices, vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(0);  // Vertex position
 
@@ -146,7 +150,7 @@ void display() {
 	glBindVertexArray(vaoID);
 	glDrawArrays(GL_PATCHES, 0, numVertices);
 
-	glPatchParameteri(GL_PATCH_VERTICES, 4);
+    glPatchParameteri(GL_PATCH_VERTICES, 16);
 
 	glFlush();
 }

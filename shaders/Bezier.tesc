@@ -1,6 +1,6 @@
 #version 400
 
-layout(vertices = 9) out;
+layout(vertices = 16) out;
 
 void main() {
     if (gl_InvocationID == 0) {
@@ -12,52 +12,6 @@ void main() {
         gl_TessLevelInner[1] = 8;
     }
 
-    switch (gl_InvocationID) {
-        case 0:
-            gl_out[gl_InvocationID].gl_Position = gl_in[0].gl_Position;
-            break;
-        case 1:
-            gl_out[gl_InvocationID].gl_Position = vec4(
-                (gl_in[0].gl_Position.xyz + gl_in[1].gl_Position.xyz) / 2 * 1.4,
-                1
-            );
-            break;
-        case 2:
-            gl_out[gl_InvocationID].gl_Position = gl_in[1].gl_Position;
-            break;
-        case 3:
-            gl_out[gl_InvocationID].gl_Position = vec4(
-                (gl_in[3].gl_Position.xyz + gl_in[0].gl_Position.xyz) / 2 * 1.4,
-                1
-            );
-            break;
-        case 4:
-            gl_out[gl_InvocationID].gl_Position = vec4(
-                (gl_in[0].gl_Position.xyz
-                + gl_in[1].gl_Position.xyz
-                + gl_in[2].gl_Position.xyz
-                + gl_in[3].gl_Position.xyz) / 4 * 2,
-                1
-            );
-            break;
-        case 5:
-            gl_out[gl_InvocationID].gl_Position = vec4(
-                (gl_in[1].gl_Position.xyz + gl_in[2].gl_Position.xyz) / 2 * 1.4,
-                1
-            );
-            break;
-        case 6:
-            gl_out[gl_InvocationID].gl_Position = gl_in[3].gl_Position;
-            break;
-        case 7:
-            gl_out[gl_InvocationID].gl_Position = vec4(
-                (gl_in[2].gl_Position.xyz + gl_in[3].gl_Position.xyz) / 2 * 1.4,
-                1
-            );
-            break;
-        case 8:
-            gl_out[gl_InvocationID].gl_Position = gl_in[2].gl_Position;
-            break;
-    }
+    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 
 }
