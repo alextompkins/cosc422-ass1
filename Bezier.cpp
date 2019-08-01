@@ -12,21 +12,29 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cmath>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
 using namespace std;
+
+// CONSTANTS
+#define TO_RAD (3.14159265f/180.0f)
 
 GLuint vaoID;
 GLuint matrixLoc;
-float angle = 0.0;
 glm::mat4 projView;
-float CDR = 3.14159265 / 180.0;   // Conversion from degrees to radians (required in GLM 0.9.6 and later versions)
 
 int numVertices;
 float* vertices;
+
+struct EyePos {
+    float angle;
+    float rad;
+    float height;
+} eyePos;
+float lookAtHeight;
 
 GLuint loadShader(GLenum shaderType, const string& filename) {
 	ifstream shaderFile(filename.c_str());
@@ -77,82 +85,132 @@ void freeVertices() {
     vertices = NULL;
 }
 
+void printLogs(GLuint program) {
+    GLint status;
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    if (status == GL_FALSE) {
+        GLint infoLogLength;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+        GLchar *strInfoLog = new GLchar[infoLogLength + 1];
+        glGetProgramInfoLog(program, infoLogLength, NULL, strInfoLog);
+        fprintf(stderr, "Linker failure: %s\n", strInfoLog);
+        delete[] strInfoLog;
+    }
+}
+
+void initCamera(bool bigModel) {
+    eyePos = {
+            0.0,
+            20.0f * (bigModel ? 4 : 1),
+            4.0f * (bigModel ? 10 : 1)
+    };
+    lookAtHeight = 1.0 * (bigModel ? 10 : 1);
+}
+
 void initialise() {
-	glm::mat4 proj, view;
-	GLuint shaderVert = loadShader(GL_VERTEX_SHADER, "shaders/Bezier.vert");
-	GLuint shaderFrag = loadShader(GL_FRAGMENT_SHADER, "shaders/Bezier.frag");
-	GLuint shaderTessCont = loadShader(GL_TESS_CONTROL_SHADER, "shaders/Bezier.tesc");
-	GLuint shaderTessEval = loadShader(GL_TESS_EVALUATION_SHADER, "shaders/Bezier.tese");
+    GLuint shaderVert = loadShader(GL_VERTEX_SHADER, "shaders/Bezier.vert");
+    GLuint shaderTessCont = loadShader(GL_TESS_CONTROL_SHADER, "shaders/Bezier.tesc");
+    GLuint shaderTessEval = loadShader(GL_TESS_EVALUATION_SHADER, "shaders/Bezier.tese");
+    GLuint shaderFrag = loadShader(GL_FRAGMENT_SHADER, "shaders/Bezier.frag");
 
 	GLuint program = glCreateProgram();
 	glAttachShader(program, shaderVert);
+    glAttachShader(program, shaderTessCont);
+    glAttachShader(program, shaderTessEval);
 	glAttachShader(program, shaderFrag);
-	glAttachShader(program, shaderTessCont);
-	glAttachShader(program, shaderTessEval);
 	glLinkProgram(program);
+	printLogs(program);
 
-	GLint status;
-	glGetProgramiv(program, GL_LINK_STATUS, &status);
-	if (status == GL_FALSE) {
-		GLint infoLogLength;
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
-		GLchar *strInfoLog = new GLchar[infoLogLength + 1];
-		glGetProgramInfoLog(program, infoLogLength, NULL, strInfoLog);
-		fprintf(stderr, "Linker failure: %s\n", strInfoLog);
-		delete[] strInfoLog;
-	}
 	glUseProgram(program);
 
-
-	proj = glm::perspective(20.0f * CDR, 1.0f, 10.0f, 1000.0f);  //perspective projection matrix
-	view = glm::lookAt(glm::vec3(0.0, 10.0, 20.0), glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 1.0, 0.0)); //view matrix
-	projView = proj * view;  //Product matrix
-
-	GLuint vboID[1];
+	GLuint vboID;
 
 	glGenVertexArrays(1, &vaoID);
 	glBindVertexArray(vaoID);
 
-//	glGenVertexArrays(1, vboID);
-	glGenBuffers(1, vboID);
+	glGenBuffers(1, &vboID);
 
     // 4x4 bezier patches (16 vertices per patch)
-    numVertices = readVertices("geom/PatchVerts_Teapot.txt");
+    numVertices = readVertices("geom/PatchVerts_Gumbo.txt");
     long sizeOfVertices = sizeof(float) * numVertices * 3;
 
-	glBindBuffer(GL_ARRAY_BUFFER, vboID[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
 	glBufferData(GL_ARRAY_BUFFER, sizeOfVertices, vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(0);  // Vertex position
-
-	glBindVertexArray(0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-}
-
-void update(int value) {
-	angle++;
-	glutTimerFunc(50, update, 0);
-	glutPostRedisplay();
-}
-
-void display() {
-	glm::mat4 matrix = glm::mat4(1.0);
-	matrix = glm::rotate(matrix, angle * CDR, glm::vec3(0.0, 1.0, 0.0));  //rotation matrix
-	glm::mat4 prodMatrix = projView * matrix;        //Model-view-proj matrix
-
-	glUniformMatrix4fv(matrixLoc, 1, GL_FALSE, &prodMatrix[0][0]);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glBindVertexArray(vaoID);
-	glDrawArrays(GL_PATCHES, 0, numVertices);
 
     glPatchParameteri(GL_PATCH_VERTICES, 16);
 
+    initCamera(true);
+}
+
+void calcProjView() {
+    glm::mat4 proj = glm::perspective(20.0f * TO_RAD, 1.0f, 0.001f, 1000.0f);  //perspective projection matrix
+    glm::mat4 view = glm::lookAt(
+            glm::vec3(eyePos.rad * sin(eyePos.angle * TO_RAD), eyePos.height, eyePos.rad * cos(eyePos.angle * TO_RAD)), // eye pos
+            glm::vec3(0.0, lookAtHeight, 0.0), // look at pos
+            glm::vec3(0.0, 1.0, 0.0)); // up vector
+    projView = proj * view;
+
+    glUniformMatrix4fv(matrixLoc, 1, GL_FALSE, &projView[0][0]);
+}
+
+void display() {
+    cout << "eyePos: " << eyePos.angle << " " << eyePos.height << " " <<  eyePos.rad << endl;
+    cout << "lookAtHeight: " << lookAtHeight << endl;
+    calcProjView();
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDrawArrays(GL_PATCHES, 0, numVertices);
+
 	glFlush();
+}
+
+void special(int key, int x, int y) {
+    const float CHANGE_VIEW_ANGLE = 2.0;
+    const float RAD_INCR = 0.5;
+
+    switch (key) {
+        case GLUT_KEY_LEFT:
+            eyePos.angle -= CHANGE_VIEW_ANGLE;
+            break;
+        case GLUT_KEY_RIGHT:
+            eyePos.angle += CHANGE_VIEW_ANGLE;
+            break;
+        case GLUT_KEY_UP:
+            eyePos.rad -= RAD_INCR;
+            break;
+        case GLUT_KEY_DOWN:
+            eyePos.rad += RAD_INCR;
+            break;
+    }
+
+    glutPostRedisplay();
+}
+
+void keyboard(unsigned char key, int x, int y) {
+    const float VERT_INCR = 1.0;
+
+    switch (key) {
+        case ' ':
+            eyePos.height += VERT_INCR;
+            break;
+        case 'x':
+            eyePos.height -= VERT_INCR;
+            break;
+        case 'i':
+            lookAtHeight += VERT_INCR;
+            break;
+        case 'k':
+            lookAtHeight -= VERT_INCR;
+            break;
+    }
+    glutPostRedisplay();
 }
 
 int main(int argc, char **argv) {
@@ -173,6 +231,7 @@ int main(int argc, char **argv) {
 
 	initialise();
 	glutDisplayFunc(display);
-	glutTimerFunc(50, update, 0);
+    glutSpecialFunc(special);
+    glutKeyboardFunc(keyboard);
 	glutMainLoop();
 }
