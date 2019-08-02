@@ -36,6 +36,8 @@ struct EyePos {
 } eyePos;
 float lookAtHeight;
 
+bool wireframeMode = true;
+
 GLuint loadShader(GLenum shaderType, const string& filename) {
 	ifstream shaderFile(filename.c_str());
 	if (!shaderFile.good()) cout << "Error opening shader file." << endl;
@@ -107,6 +109,17 @@ void initCamera(bool bigModel) {
     lookAtHeight = 1.0 * (bigModel ? 10 : 1);
 }
 
+void setPolygonMode() {
+    glPolygonMode(GL_FRONT_AND_BACK, wireframeMode ? GL_LINE : GL_FILL);
+    if (wireframeMode) {
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+    } else {
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+    }
+}
+
 void initialise() {
     GLuint shaderVert = loadShader(GL_VERTEX_SHADER, "shaders/Bezier.vert");
     GLuint shaderTessCont = loadShader(GL_TESS_CONTROL_SHADER, "shaders/Bezier.tesc");
@@ -142,9 +155,7 @@ void initialise() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(0);  // Vertex position
 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	setPolygonMode();
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     glPatchParameteri(GL_PATCH_VERTICES, 16);
@@ -226,6 +237,10 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case 'k':
             lookAtHeight -= VERT_INCR;
+            break;
+        case 'w':
+            wireframeMode = !wireframeMode;
+            setPolygonMode();
             break;
     }
     glutPostRedisplay();
