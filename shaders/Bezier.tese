@@ -1,7 +1,6 @@
 #version 400
 
 layout(quads, equal_spacing, ccw) in;
-uniform mat4 mvpMatrix;
 
 vec4 posn;
 

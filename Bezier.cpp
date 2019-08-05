@@ -23,7 +23,7 @@ using namespace std;
 #define TO_RAD (3.14159265f/180.0f)
 
 GLuint vaoID;
-GLuint mvpMatrixLoc, tessLevelLoc, mvMatrixLoc, norMatrixLoc, lightPosLoc;
+GLuint mvpMatrixLoc, tessLevelLoc, mvMatrixLoc, norMatrixLoc, lightPosLoc, wireframeFlagLoc;
 
 int numVertices;
 float* vertices;
@@ -110,6 +110,7 @@ void initCamera(bool bigModel) {
 
 void setPolygonMode() {
     glPolygonMode(GL_FRONT_AND_BACK, wireframeMode ? GL_LINE : GL_FILL);
+    glUniform1i(wireframeFlagLoc, wireframeMode);
     if (wireframeMode) {
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
@@ -142,6 +143,7 @@ void initialise() {
     mvMatrixLoc = glGetUniformLocation(program, "mvMatrix");
     norMatrixLoc = glGetUniformLocation(program, "norMatrix");
     lightPosLoc = glGetUniformLocation(program, "lightPos");
+    wireframeFlagLoc = glGetUniformLocation(program, "wireframeFlag");
 
 	GLuint vboID;
 
@@ -175,7 +177,7 @@ void calcUniformMatrices() {
             glm::vec3(0.0, 1.0, 0.0)); // up vector
     glm::mat4 mvMatrix = glm::rotate(view, -eyePos.angle * TO_RAD, glm::vec3(0.0, 1.0, 0.0));
 
-    glm::vec4 lightPos = glm::vec4(-30.0, 30.0, -20.0, 1.0);
+    glm::vec4 lightPos = glm::vec4(-30.0, 30.0, 50.0, 1.0);
     glm::vec4 lightEye = view * lightPos;
 
     glm::mat4 norMatrix = glm::inverse(mvMatrix);
