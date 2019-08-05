@@ -21,6 +21,7 @@ using namespace std;
 
 // CONSTANTS
 #define TO_RAD (3.14159265f/180.0f)
+#define MODEL_FILENAME "geom/PatchVerts_Gumbo.txt"
 
 GLuint vaoID;
 GLuint mvpMatrixLoc, tessLevelLoc, mvMatrixLoc, norMatrixLoc, lightPosLoc, wireframeFlagLoc;
@@ -153,7 +154,7 @@ void initialise() {
 	glGenBuffers(1, &vboID);
 
     // 4x4 bezier patches (16 vertices per patch)
-    numVertices = readVertices("geom/PatchVerts_Teapot.txt");
+    numVertices = readVertices(MODEL_FILENAME);
     long sizeOfVertices = sizeof(float) * numVertices * 3;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vboID);
@@ -166,7 +167,8 @@ void initialise() {
 
     glPatchParameteri(GL_PATCH_VERTICES, 16);
 
-    initCamera(false);
+    bool isBigModel = string(MODEL_FILENAME).find("Gumbo") != -1;
+    initCamera(isBigModel);
 }
 
 void calcUniformMatrices() {
@@ -177,7 +179,7 @@ void calcUniformMatrices() {
             glm::vec3(0.0, 1.0, 0.0)); // up vector
     glm::mat4 mvMatrix = glm::rotate(view, -eyePos.angle * TO_RAD, glm::vec3(0.0, 1.0, 0.0));
 
-    glm::vec4 lightPos = glm::vec4(-30.0, 30.0, 50.0, 1.0);
+    glm::vec4 lightPos = glm::vec4(-300.0, 300.0, 500.0, 1.0);
     glm::vec4 lightEye = view * lightPos;
 
     glm::mat4 norMatrix = glm::inverse(mvMatrix);
