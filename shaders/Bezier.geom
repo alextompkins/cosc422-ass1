@@ -9,7 +9,7 @@ uniform mat4 mvpMatrix;
 uniform vec4 lightPos;
 out vec4 primColor;
 
-#define SHININESS 100.0
+#define SHININESS 100000.0
 
 vec4 white = vec4(1.0);
 vec4 grey = vec4(0.2);
@@ -37,19 +37,18 @@ void main() {
         vec4 viewVec = normalize(vec4(-posnEye.xyz, 0));
         vec4 halfVec = normalize(lightVec + viewVec);
 
-        float nDotL = dot(normalEye, lightVec);
-        float nDotV = dot(normalEye, viewVec);
-
         // Compute ambient
         vec4 material = vec4(0.0, 1.0, 1.0, 1.0);
         vec4 ambOut = grey * material;
 
         // Compute diffuse
-        float diffTerm = max(dot(lightVec, normalEye), 0);
+        float nDotL = dot(normalEye, lightVec);
+        float diffTerm = max(nDotL, 0);
         vec4 diffOut = material * diffTerm;
 
         // Compute specular
-        float specTerm = max(dot(halfVec, normalEye), 0);
+        float nDotV = dot(normalEye, viewVec);
+        float specTerm = max(nDotV, 0);
         vec4 specOut = white * pow(specTerm, SHININESS);
 
         gl_Position = mvpMatrix * gl_in[i].gl_Position;
