@@ -21,7 +21,7 @@ using namespace std;
 
 // CONSTANTS
 #define TO_RAD (3.14159265f/180.0f)
-#define MODEL_FILENAME "geom/PatchVerts_Gumbo.txt"
+#define MODEL_FILENAME "geom/PatchVerts_Teapot.txt"
 
 GLuint vaoID;
 GLuint mvpMatrixLoc, tessLevelLoc, mvMatrixLoc, norMatrixLoc, lightPosLoc, wireframeFlagLoc;
@@ -179,7 +179,7 @@ void calcUniformMatrices() {
             glm::vec3(0.0, 1.0, 0.0)); // up vector
     glm::mat4 mvMatrix = glm::rotate(view, -eyePos.angle * TO_RAD, glm::vec3(0.0, 1.0, 0.0));
 
-    glm::vec4 lightPos = glm::vec4(-300.0, 300.0, 500.0, 1.0);
+    glm::vec4 lightPos = glm::vec4(0.0, 0.0, 500.0, 1.0);
     glm::vec4 lightEye = view * lightPos;
 
     glm::mat4 norMatrix = glm::inverse(mvMatrix);
