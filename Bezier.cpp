@@ -140,6 +140,7 @@ void initialise() {
 	mvpMatrixLoc = glGetUniformLocation(program, "mvpMatrix");
 	tessLevelLoc = glGetUniformLocation(program, "tessLevel");
     mvMatrixLoc = glGetUniformLocation(program, "mvMatrix");
+    norMatrixLoc = glGetUniformLocation(program, "norMatrix");
     lightPosLoc = glGetUniformLocation(program, "lightPos");
 
 	GLuint vboID;
@@ -169,17 +170,18 @@ void initialise() {
 void calcUniformMatrices() {
     glm::mat4 proj = glm::perspective(20.0f * TO_RAD, 1.0f, 0.001f, 1000.0f);  // perspective projection matrix
     glm::mat4 view = glm::lookAt(
-            glm::vec3(eyePos.rad * sin(eyePos.angle * TO_RAD), eyePos.height, eyePos.rad * cos(eyePos.angle * TO_RAD)), // eye pos
+            glm::vec3(0.0, eyePos.height, eyePos.rad), // eye pos
             glm::vec3(0.0, lookAtHeight, 0.0), // look at pos
             glm::vec3(0.0, 1.0, 0.0)); // up vector
+    glm::mat4 mvMatrix = glm::rotate(view, -eyePos.angle * TO_RAD, glm::vec3(0.0, 1.0, 0.0));
 
-    glm::vec4 lightPos = glm::vec4(0.0, 20.0, 0.0, 1.0);
+    glm::vec4 lightPos = glm::vec4(-30.0, 30.0, -20.0, 1.0);
     glm::vec4 lightEye = view * lightPos;
 
-    glm::mat4 norMatrix = glm::inverse(view);
-    glm::mat4 mvpMatrix = proj * view;
+    glm::mat4 norMatrix = glm::inverse(mvMatrix);
+    glm::mat4 mvpMatrix = proj * mvMatrix;
 
-    glUniformMatrix4fv(mvMatrixLoc, 1, GL_FALSE, &view[0][0]);
+    glUniformMatrix4fv(mvMatrixLoc, 1, GL_FALSE, &mvMatrix[0][0]);
     glUniformMatrix4fv(norMatrixLoc, 1, GL_FALSE, &norMatrix[0][0]);
     glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &mvpMatrix[0][0]);
     glUniform4fv(lightPosLoc, 1, &lightEye[0]);
