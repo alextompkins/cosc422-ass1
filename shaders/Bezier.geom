@@ -9,7 +9,7 @@ uniform mat4 mvpMatrix;
 uniform vec4 lightPos;
 out vec4 primColor;
 
-#define SHININESS 100000.0
+#define SHININESS 100.0
 
 vec4 white = vec4(1.0);
 vec4 grey = vec4(0.2);
