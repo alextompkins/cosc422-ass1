@@ -27,5 +27,5 @@ void main() {
          + Cu * (Av * P(8) + Bv * P(9) + Cv * P(10) + Dv * P(11))
          + Du * (Av * P(12) + Bv * P(13) + Cv * P(14) + Dv * P(15));
 
-    gl_Position = mvpMatrix * posn;
+    gl_Position = posn;
 }

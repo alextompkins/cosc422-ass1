@@ -23,8 +23,7 @@ using namespace std;
 #define TO_RAD (3.14159265f/180.0f)
 
 GLuint vaoID;
-GLuint mvpMatrixLoc, tessLevelLoc;
-glm::mat4 projView;
+GLuint mvpMatrixLoc, tessLevelLoc, mvMatrixLoc, norMatrixLoc, lightPosLoc;
 
 int numVertices;
 float* vertices;
@@ -124,12 +123,14 @@ void initialise() {
     GLuint shaderVert = loadShader(GL_VERTEX_SHADER, "shaders/Bezier.vert");
     GLuint shaderTessCont = loadShader(GL_TESS_CONTROL_SHADER, "shaders/Bezier.tesc");
     GLuint shaderTessEval = loadShader(GL_TESS_EVALUATION_SHADER, "shaders/Bezier.tese");
+    GLuint shaderGeom = loadShader(GL_GEOMETRY_SHADER, "shaders/Bezier.geom");
     GLuint shaderFrag = loadShader(GL_FRAGMENT_SHADER, "shaders/Bezier.frag");
 
 	GLuint program = glCreateProgram();
 	glAttachShader(program, shaderVert);
     glAttachShader(program, shaderTessCont);
     glAttachShader(program, shaderTessEval);
+    glAttachShader(program, shaderGeom);
 	glAttachShader(program, shaderFrag);
 	glLinkProgram(program);
 	printLogs(program);
@@ -138,6 +139,8 @@ void initialise() {
 
 	mvpMatrixLoc = glGetUniformLocation(program, "mvpMatrix");
 	tessLevelLoc = glGetUniformLocation(program, "tessLevel");
+    mvMatrixLoc = glGetUniformLocation(program, "mvMatrix");
+    lightPosLoc = glGetUniformLocation(program, "lightPos");
 
 	GLuint vboID;
 
@@ -163,15 +166,23 @@ void initialise() {
     initCamera(false);
 }
 
-void calcProjView() {
-    glm::mat4 proj = glm::perspective(20.0f * TO_RAD, 1.0f, 0.001f, 1000.0f);  //perspective projection matrix
+void calcUniformMatrices() {
+    glm::mat4 proj = glm::perspective(20.0f * TO_RAD, 1.0f, 0.001f, 1000.0f);  // perspective projection matrix
     glm::mat4 view = glm::lookAt(
             glm::vec3(eyePos.rad * sin(eyePos.angle * TO_RAD), eyePos.height, eyePos.rad * cos(eyePos.angle * TO_RAD)), // eye pos
             glm::vec3(0.0, lookAtHeight, 0.0), // look at pos
             glm::vec3(0.0, 1.0, 0.0)); // up vector
-    projView = proj * view;
 
-    glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &projView[0][0]);
+    glm::vec4 lightPos = glm::vec4(0.0, 20.0, 0.0, 1.0);
+    glm::vec4 lightEye = view * lightPos;
+
+    glm::mat4 norMatrix = glm::inverse(view);
+    glm::mat4 mvpMatrix = proj * view;
+
+    glUniformMatrix4fv(mvMatrixLoc, 1, GL_FALSE, &view[0][0]);
+    glUniformMatrix4fv(norMatrixLoc, 1, GL_FALSE, &norMatrix[0][0]);
+    glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &mvpMatrix[0][0]);
+    glUniform4fv(lightPosLoc, 1, &lightEye[0]);
 }
 
 void setTessLevel() {
@@ -191,7 +202,7 @@ void setTessLevel() {
 void display() {
     cout << "eyePos: " << eyePos.angle << " " << eyePos.height << " " <<  eyePos.rad << endl;
     cout << "lookAtHeight: " << lookAtHeight << endl;
-    calcProjView();
+    calcUniformMatrices();
     setTessLevel();
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
