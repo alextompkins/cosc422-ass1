@@ -37,6 +37,7 @@ struct EyePos {
 float lookAtHeight;
 
 bool wireframeMode = false;
+bool isBigModel = false;
 
 GLuint loadShader(GLenum shaderType, const string& filename) {
 	ifstream shaderFile(filename.c_str());
@@ -104,7 +105,7 @@ void initCamera(bool bigModel) {
     eyePos = {
             0.0,
             20.0f * (bigModel ? 4 : 1),
-            4.0f * (bigModel ? 10 : 1)
+            4.0f * (bigModel ? 6 : 1)
     };
     lookAtHeight = 1.0 * (bigModel ? 10 : 1);
 }
@@ -167,7 +168,7 @@ void initialise() {
 
     glPatchParameteri(GL_PATCH_VERTICES, 16);
 
-    bool isBigModel = string(MODEL_FILENAME).find("Gumbo") != -1;
+    isBigModel = string(MODEL_FILENAME).find("Gumbo") != -1;
     initCamera(isBigModel);
 }
 
@@ -192,16 +193,23 @@ void calcUniformMatrices() {
 }
 
 void setTessLevel() {
-    int tessLevel;
-    if (eyePos.rad > 25) {
-        tessLevel = 2;
-    } else if (eyePos.rad > 10) {
-        tessLevel = 4;
-    } else if (eyePos.rad > 5) {
-        tessLevel = 8;
+    int lhigh = 20;
+    int llow = 2;
+
+    float dmin, dmax;
+    if (isBigModel) {
+        dmin = 10.0;
+        dmax = 250.0;
     } else {
-        tessLevel = 16;
+        dmin = 5.0;
+        dmax = 70.0;
     }
+
+    float relDistance = (eyePos.rad - dmin) / (dmax - dmin);
+    int tessLevel = relDistance * (llow - lhigh) + lhigh;
+    if (tessLevel < llow) tessLevel = llow;
+    else if (tessLevel > lhigh) tessLevel = lhigh;
+
     glUniform1i(tessLevelLoc, tessLevel);
 }
 
