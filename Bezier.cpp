@@ -36,7 +36,7 @@ struct EyePos {
 } eyePos;
 float lookAtHeight;
 
-bool wireframeMode = true;
+bool wireframeMode = false;
 
 GLuint loadShader(GLenum shaderType, const string& filename) {
 	ifstream shaderFile(filename.c_str());
