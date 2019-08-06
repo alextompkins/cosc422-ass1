@@ -210,12 +210,12 @@ void setTessLevel() {
     if (tessLevel < llow) tessLevel = llow;
     else if (tessLevel > lhigh) tessLevel = lhigh;
 
+    cout << "tessLevel: " << tessLevel << endl;
     glUniform1i(tessLevelLoc, tessLevel);
 }
 
 void display() {
-    cout << "eyePos: " << eyePos.angle << " " << eyePos.height << " " <<  eyePos.rad << endl;
-    cout << "lookAtHeight: " << lookAtHeight << endl;
+    cout << "distance: " <<  eyePos.rad << endl;
     calcUniformMatrices();
     setTessLevel();
 
