@@ -13,7 +13,7 @@ out vec4 primColor;
 
 vec4 white = vec4(1.0);
 vec4 grey = vec4(0.2);
-vec4 cyan = vec4(0.0, 1.0, 1.0, 1.0);
+vec4 material = vec4(0.0, 1.0, 1.0, 1.0);
 
 vec4 calcTriangleNormal(vec3 p0, vec3 p1, vec3 p2) {
     vec3 a = p1 - p0;
@@ -38,7 +38,6 @@ void main() {
         vec4 halfVec = normalize(lightVec + viewVec);
 
         // Compute ambient
-        vec4 material = vec4(0.0, 1.0, 1.0, 1.0);
         vec4 ambOut = grey * material;
 
         // Compute diffuse
