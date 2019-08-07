@@ -22,9 +22,10 @@ using namespace std;
 // CONSTANTS
 #define TO_RAD (3.14159265f/180.0f)
 #define MODEL_FILENAME "geom/PatchVerts_Teapot.txt"
+#define TIMER_INTERVAL 20
 
 GLuint vaoID;
-GLuint mvpMatrixLoc, tessLevelLoc, mvMatrixLoc, norMatrixLoc, lightPosLoc, wireframeFlagLoc;
+GLuint mvpMatrixLoc, tessLevelLoc, mvMatrixLoc, norMatrixLoc, lightPosLoc, wireframeFlagLoc, timeSinceExplosionLoc;
 
 int numVertices;
 float* vertices;
@@ -38,6 +39,8 @@ float lookAtHeight;
 
 bool wireframeMode = false;
 bool isBigModel = false;
+bool hasExploded = false;
+int timeSinceExplosion = 0;
 
 GLuint loadShader(GLenum shaderType, const string& filename) {
 	ifstream shaderFile(filename.c_str());
@@ -146,6 +149,7 @@ void initialise() {
     norMatrixLoc = glGetUniformLocation(program, "norMatrix");
     lightPosLoc = glGetUniformLocation(program, "lightPos");
     wireframeFlagLoc = glGetUniformLocation(program, "wireframeFlag");
+    timeSinceExplosionLoc = glGetUniformLocation(program, "timeSinceExplosion");
 
 	GLuint vboID;
 
@@ -172,7 +176,7 @@ void initialise() {
     initCamera(isBigModel);
 }
 
-void calcUniformMatrices() {
+void calcUniforms() {
     glm::mat4 proj = glm::perspective(20.0f * TO_RAD, 1.0f, 0.001f, 1000.0f);  // perspective projection matrix
     glm::mat4 view = glm::lookAt(
             glm::vec3(0.0, eyePos.height, eyePos.rad), // eye pos
@@ -190,6 +194,7 @@ void calcUniformMatrices() {
     glUniformMatrix4fv(norMatrixLoc, 1, GL_FALSE, &norMatrix[0][0]);
     glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &mvpMatrix[0][0]);
     glUniform4fv(lightPosLoc, 1, &lightEye[0]);
+    glUniform1i(timeSinceExplosionLoc, timeSinceExplosion);
 }
 
 void setTessLevel() {
@@ -216,7 +221,7 @@ void setTessLevel() {
 
 void display() {
     cout << "distance: " <<  eyePos.rad << endl;
-    calcUniformMatrices();
+    calcUniforms();
     setTessLevel();
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -251,10 +256,10 @@ void keyboard(unsigned char key, int x, int y) {
     const float VERT_INCR = 1.0;
 
     switch (key) {
-        case ' ':
+        case 'a':
             eyePos.height += VERT_INCR;
             break;
-        case 'x':
+        case 'z':
             eyePos.height -= VERT_INCR;
             break;
         case 'i':
@@ -267,15 +272,27 @@ void keyboard(unsigned char key, int x, int y) {
             wireframeMode = !wireframeMode;
             setPolygonMode();
             break;
+        case ' ':
+            hasExploded = true;
+            break;
     }
     glutPostRedisplay();
+}
+
+void timer(int value) {
+    if (hasExploded) {
+        timeSinceExplosion++;
+        cout << "time: " << timeSinceExplosion << endl;
+    }
+    glutPostRedisplay();
+    glutTimerFunc(TIMER_INTERVAL, timer, 0);
 }
 
 int main(int argc, char **argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(500, 500);
-	glutCreateWindow("Cube with Bezier patches");
+	glutCreateWindow(MODEL_FILENAME);
 	glutInitContextVersion(4, 2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 
@@ -291,5 +308,6 @@ int main(int argc, char **argv) {
 	glutDisplayFunc(display);
     glutSpecialFunc(special);
     glutKeyboardFunc(keyboard);
+    glutTimerFunc(TIMER_INTERVAL, timer, 0);
 	glutMainLoop();
 }
