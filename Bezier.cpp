@@ -21,7 +21,7 @@ using namespace std;
 
 // CONSTANTS
 #define TO_RAD (3.14159265f/180.0f)
-#define MODEL_FILENAME "geom/PatchVerts_Teapot.txt"
+#define MODEL_FILENAME "geom/PatchVerts_Gumbo.txt"
 #define TIMER_INTERVAL 20
 
 GLuint vaoID;

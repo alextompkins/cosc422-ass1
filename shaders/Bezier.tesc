@@ -26,7 +26,7 @@ void main() {
     if (timeSinceExplosion == 0) {
         gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
     } else {
-        float time = timeSinceExplosion * 0.01;
+        float time = timeSinceExplosion * 0.03;
 
         float initialVel = 4.0;
         float gravity = 5.0;
