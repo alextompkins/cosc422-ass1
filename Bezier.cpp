@@ -204,7 +204,7 @@ void setTessLevel() {
     float dmin, dmax;
     if (isBigModel) {
         dmin = 10.0;
-        dmax = 250.0;
+        dmax = 150.0;
     } else {
         dmin = 5.0;
         dmax = 70.0;
@@ -232,7 +232,7 @@ void display() {
 
 void special(int key, int x, int y) {
     const float CHANGE_VIEW_ANGLE = 2.0;
-    const float RAD_INCR = 0.5;
+    const float RAD_INCR = 1.0;
 
     switch (key) {
         case GLUT_KEY_LEFT:
