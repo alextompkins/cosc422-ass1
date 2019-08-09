@@ -23,12 +23,17 @@ using namespace std;
 #define TO_RAD (3.14159265f/180.0f)
 #define MODEL_FILENAME "geom/PatchVerts_Gumbo.txt"
 #define TIMER_INTERVAL 20
+#define FLOOR_WIDTH 10
+#define FLOOR_LENGTH 10
 
-GLuint vaoID;
-GLuint mvpMatrixLoc, tessLevelLoc, mvMatrixLoc, norMatrixLoc, lightPosLoc, wireframeFlagLoc, timeSinceExplosionLoc;
+GLuint bezierProgram, floorProgram;
+GLuint bezierVao, floorVao, bezierVbo, floorVertsVbo, floorElemsVbo;
+GLuint mvpMatrixLoc, tessLevelLoc, mvMatrixLoc, norMatrixLoc, lightPosLoc, wireframeFlagLoc, timeSinceExplosionLoc, floorMvpMatrixLoc;
 
 int numVertices;
 float* vertices;
+float floorVerts[FLOOR_WIDTH * FLOOR_LENGTH * 3];      // 10x10 grid (100 vertices)
+GLushort floorElems[(FLOOR_WIDTH - 1) * (FLOOR_LENGTH - 1) * 4];    // element array for 81 quad patches
 
 struct EyePos {
     float angle;
@@ -91,6 +96,31 @@ void freeVertices() {
     vertices = NULL;
 }
 
+void generateFloor() {
+    int indx, start;
+    // vertices
+    for (int i = 0; i < FLOOR_LENGTH; i++) { // 100 vertices on a 10x10 grid
+        for (int j = 0; j < FLOOR_WIDTH; j++) {
+            indx = FLOOR_LENGTH * i + j;
+            floorVerts[3 * indx] = 10 * i - 45;         // x varies from -45 to +45
+            floorVerts[3 * indx + 1] = 0;               // y is set to 0 (ground plane)
+            floorVerts[3 * indx + 2] = 10 * j - 50;         // z varies from -50 to 50
+        }
+    }
+
+    // elements
+    for (int i = 0; i < FLOOR_LENGTH - 1; i++) {
+        for (int j = 0; j < FLOOR_WIDTH - 1; j++) {
+            indx = (FLOOR_LENGTH - 1) * i + j;
+            start = FLOOR_LENGTH * i + j;
+            floorElems[4 * indx] = start;
+            floorElems[4 * indx + 1] = start + FLOOR_LENGTH;
+            floorElems[4 * indx + 2] = start + FLOOR_LENGTH + 1;
+            floorElems[4 * indx + 3] = start + 1;
+        }
+    }
+}
+
 void printLogs(GLuint program) {
     GLint status;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
@@ -113,10 +143,10 @@ void initCamera(bool bigModel) {
     lookAtHeight = 1.0 * (bigModel ? 10 : 1);
 }
 
-void setPolygonMode() {
-    glPolygonMode(GL_FRONT_AND_BACK, wireframeMode ? GL_LINE : GL_FILL);
-    glUniform1i(wireframeFlagLoc, wireframeMode);
-    if (wireframeMode) {
+void setPolygonMode(bool isWireframe) {
+    glPolygonMode(GL_FRONT_AND_BACK, isWireframe ? GL_LINE : GL_FILL);
+    glUniform1i(wireframeFlagLoc, isWireframe);
+    if (isWireframe) {
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
     } else {
@@ -126,50 +156,74 @@ void setPolygonMode() {
 }
 
 void initialise() {
+    // Setup model program
     GLuint shaderVert = loadShader(GL_VERTEX_SHADER, "shaders/Bezier.vert");
     GLuint shaderTessCont = loadShader(GL_TESS_CONTROL_SHADER, "shaders/Bezier.tesc");
     GLuint shaderTessEval = loadShader(GL_TESS_EVALUATION_SHADER, "shaders/Bezier.tese");
     GLuint shaderGeom = loadShader(GL_GEOMETRY_SHADER, "shaders/Bezier.geom");
     GLuint shaderFrag = loadShader(GL_FRAGMENT_SHADER, "shaders/Bezier.frag");
 
-	GLuint program = glCreateProgram();
-	glAttachShader(program, shaderVert);
-    glAttachShader(program, shaderTessCont);
-    glAttachShader(program, shaderTessEval);
-    glAttachShader(program, shaderGeom);
-	glAttachShader(program, shaderFrag);
-	glLinkProgram(program);
-	printLogs(program);
+	bezierProgram = glCreateProgram();
+	glAttachShader(bezierProgram, shaderVert);
+    glAttachShader(bezierProgram, shaderTessCont);
+    glAttachShader(bezierProgram, shaderTessEval);
+    glAttachShader(bezierProgram, shaderGeom);
+	glAttachShader(bezierProgram, shaderFrag);
+	glLinkProgram(bezierProgram);
+	printLogs(bezierProgram);
 
-	glUseProgram(program);
+	mvpMatrixLoc = glGetUniformLocation(bezierProgram, "mvpMatrix");
+	tessLevelLoc = glGetUniformLocation(bezierProgram, "tessLevel");
+    mvMatrixLoc = glGetUniformLocation(bezierProgram, "mvMatrix");
+    norMatrixLoc = glGetUniformLocation(bezierProgram, "norMatrix");
+    lightPosLoc = glGetUniformLocation(bezierProgram, "lightPos");
+    wireframeFlagLoc = glGetUniformLocation(bezierProgram, "wireframeFlag");
+    timeSinceExplosionLoc = glGetUniformLocation(bezierProgram, "timeSinceExplosion");
 
-	mvpMatrixLoc = glGetUniformLocation(program, "mvpMatrix");
-	tessLevelLoc = glGetUniformLocation(program, "tessLevel");
-    mvMatrixLoc = glGetUniformLocation(program, "mvMatrix");
-    norMatrixLoc = glGetUniformLocation(program, "norMatrix");
-    lightPosLoc = glGetUniformLocation(program, "lightPos");
-    wireframeFlagLoc = glGetUniformLocation(program, "wireframeFlag");
-    timeSinceExplosionLoc = glGetUniformLocation(program, "timeSinceExplosion");
+    // Setup floor program
+    GLuint floorVert = loadShader(GL_VERTEX_SHADER, "shaders/Floor.vert");
+    GLuint floorFrag = loadShader(GL_FRAGMENT_SHADER, "shaders/Floor.frag");
 
-	GLuint vboID;
-
-	glGenVertexArrays(1, &vaoID);
-	glBindVertexArray(vaoID);
-
-	glGenBuffers(1, &vboID);
+    floorProgram = glCreateProgram();
+    glAttachShader(floorProgram, floorVert);
+    glAttachShader(floorProgram, floorFrag);
+    glLinkProgram(floorProgram);
+    printLogs(floorProgram);
 
     // 4x4 bezier patches (16 vertices per patch)
     numVertices = readVertices(MODEL_FILENAME);
     long sizeOfVertices = sizeof(float) * numVertices * 3;
+    generateFloor();
 
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeOfVertices, vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(0);  // Vertex position
+    // Setup VAOs
+    glGenVertexArrays(1, &bezierVao);
+    glGenVertexArrays(1, &floorVao);
+    glGenBuffers(1, &bezierVbo);
+    glGenBuffers(1, &floorVertsVbo);
+    glGenBuffers(1, &floorElemsVbo);
 
-	setPolygonMode();
+    glUseProgram(bezierProgram);
+    glBindVertexArray(bezierVao);
+    glBindBuffer(GL_ARRAY_BUFFER, bezierVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeOfVertices, vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
+
+    glUseProgram(floorProgram);
+    glBindVertexArray(floorVao);
+    glBindBuffer(GL_ARRAY_BUFFER, floorVertsVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(floorVerts), floorVerts, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, floorElemsVbo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(floorElems), floorElems, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glUseProgram(0);
+
+    // Basic GL settings
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-
     glPatchParameteri(GL_PATCH_VERTICES, 16);
 
     isBigModel = string(MODEL_FILENAME).find("Gumbo") != -1;
@@ -193,6 +247,7 @@ void calcUniforms() {
     glUniformMatrix4fv(mvMatrixLoc, 1, GL_FALSE, &mvMatrix[0][0]);
     glUniformMatrix4fv(norMatrixLoc, 1, GL_FALSE, &norMatrix[0][0]);
     glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &mvpMatrix[0][0]);
+    glUniformMatrix4fv(floorMvpMatrixLoc, 1, GL_FALSE, &mvpMatrix[0][0]);
     glUniform4fv(lightPosLoc, 1, &lightEye[0]);
     glUniform1i(timeSinceExplosionLoc, timeSinceExplosion);
 }
@@ -221,12 +276,23 @@ void setTessLevel() {
 
 void display() {
     cout << "distance: " <<  eyePos.rad << endl;
-    calcUniforms();
     setTessLevel();
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDrawArrays(GL_PATCHES, 0, numVertices);
 
+    glUseProgram(floorProgram);
+    calcUniforms();
+    setPolygonMode(true);
+    glBindVertexArray(floorVao);
+    glDrawElements(GL_QUADS, 81 * 4, GL_UNSIGNED_SHORT, NULL);
+
+	glUseProgram(bezierProgram);
+    calcUniforms();
+    setPolygonMode(wireframeMode);
+	glBindVertexArray(bezierVao);
+    glDrawArrays(GL_PATCHES, 0, numVertices);
+
+    glBindVertexArray(0);
 	glFlush();
 }
 
@@ -270,7 +336,6 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case 'w':
             wireframeMode = !wireframeMode;
-            setPolygonMode();
             break;
         case ' ':
             hasExploded = true;
