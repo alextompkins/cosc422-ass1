@@ -3,7 +3,7 @@
 layout(vertices = 4) out;
 
 void main() {
-    int tessLevel = 8;
+    int tessLevel = 6;
 
     if (gl_InvocationID == 0) {
         gl_TessLevelOuter[0] = tessLevel;

@@ -24,7 +24,7 @@ using namespace std;
 
 GLuint terrainProgram;
 GLuint terrainVao, terrainVertsVbo, terrainElemsVbo;
-GLuint mvpMatrixLoc, textureLoc, wireframeFlagLoc;
+GLuint mvpMatrixLoc, wireframeFlagLoc, heightMapperLoc;
 
 float verts[100 * 3];       //10x10 grid (100 vertices)
 GLushort elems[81 * 4];       //Element array for 81 quad patches
@@ -135,7 +135,8 @@ void setupTerrainProgram() {
 
     // Get graphics memory locations for uniform variables
     mvpMatrixLoc = glGetUniformLocation(terrainProgram, "mvpMatrix");
-    textureLoc = glGetUniformLocation(terrainProgram, "heightMap");
+    heightMapperLoc = glGetUniformLocation(terrainProgram, "heightMapper");
+    wireframeFlagLoc = glGetUniformLocation(terrainProgram, "wireframeFlag");
 
     // Generate VAO and VBOs
     glGenVertexArrays(1, &terrainVao);
@@ -174,7 +175,7 @@ void initialise() {
 
     // Load textures
 	loadTextures();
-	glUniform1i(textureLoc, 0);
+	glUniform1i(heightMapperLoc, 0);
 
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glPatchParameteri(GL_PATCH_VERTICES, 4);
