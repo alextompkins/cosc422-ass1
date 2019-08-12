@@ -33,7 +33,8 @@ struct EyePos {
     float x;
     float y;
     float z;
-    float angle;
+    float horAngle;
+    float vertAngle;
 } eyePos;
 float lookAtHeight;
 
@@ -160,9 +161,10 @@ void setupTerrainProgram() {
 void initCamera() {
     eyePos = {
             0.0,
-            10.0,
-            0.0,
-            270
+            15.0,
+            30.0,
+            270,
+            -10
     };
     lookAtHeight = 0.0;
 }
@@ -185,7 +187,7 @@ void calcUniforms() {
     glm::mat4 proj = glm::perspective(30.0f * TO_RAD, 1.25f, 20.0f, 500.0f);  // perspective projection matrix
     glm::mat4 view = glm::lookAt(
             glm::vec3(eyePos.x, eyePos.y, eyePos.z), // eye pos
-            glm::vec3(eyePos.x + cos(glm::radians(eyePos.angle)), eyePos.y, eyePos.z + sin(glm::radians(eyePos.angle))), // look at pos
+            glm::vec3(eyePos.x + cos(glm::radians(eyePos.horAngle)), eyePos.y + sin(glm::radians(eyePos.vertAngle)), eyePos.z + sin(glm::radians(eyePos.horAngle))), // look at pos
             glm::vec3(0.0, 1.0, 0.0)); // up vector
     glm::mat4 mvMatrix = view;
 
@@ -248,6 +250,7 @@ void special(int key, int x, int y) {
 
 void keyboard(unsigned char key, int x, int y) {
     const float MOVE_DISTANCE = 1.0;
+    const float ANGLE_INCR = 1.0;
 
     switch (key) {
         case ' ':
@@ -255,6 +258,12 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case 'x':
             eyePos.y -= MOVE_DISTANCE;
+            break;
+        case 't':
+            eyePos.vertAngle += ANGLE_INCR;
+            break;
+        case 'g':
+            eyePos.vertAngle -= ANGLE_INCR;
             break;
         case 'w':
             wireframeMode = !wireframeMode;
