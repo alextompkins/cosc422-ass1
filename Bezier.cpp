@@ -302,6 +302,7 @@ void display() {
     glUseProgram(floorProgram);
     calcUniforms();
     setPolygonMode(true);
+    glEnable(GL_DEPTH_TEST);
     glBindVertexArray(floorVao);
     glDrawElements(GL_QUADS, 81 * 4, GL_UNSIGNED_SHORT, NULL);
 
