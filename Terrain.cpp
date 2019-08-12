@@ -24,7 +24,7 @@ using namespace std;
 
 GLuint terrainProgram;
 GLuint terrainVao, terrainVertsVbo, terrainElemsVbo;
-GLuint mvpMatrixLoc, wireframeFlagLoc, heightMapperLoc;
+GLuint mvpMatrixLoc, wireframeFlagLoc, heightMapperLoc, eyePosLoc;
 
 float verts[100 * 3];       //10x10 grid (100 vertices)
 GLushort elems[81 * 4];       //Element array for 81 quad patches
@@ -138,6 +138,7 @@ void setupTerrainProgram() {
     mvpMatrixLoc = glGetUniformLocation(terrainProgram, "mvpMatrix");
     heightMapperLoc = glGetUniformLocation(terrainProgram, "heightMapper");
     wireframeFlagLoc = glGetUniformLocation(terrainProgram, "wireframeFlag");
+    eyePosLoc = glGetUniformLocation(terrainProgram, "eyePos");
 
     // Generate VAO and VBOs
     glGenVertexArrays(1, &terrainVao);
@@ -184,7 +185,7 @@ void initialise() {
 }
 
 void calcUniforms() {
-    glm::mat4 proj = glm::perspective(30.0f * TO_RAD, 1.25f, 20.0f, 500.0f);  // perspective projection matrix
+    glm::mat4 proj = glm::perspective(30.0f * TO_RAD, 1.25f, 0.001f, 10000.0f);  // perspective projection matrix
     glm::mat4 view = glm::lookAt(
             glm::vec3(eyePos.x, eyePos.y, eyePos.z), // eye pos
             glm::vec3(eyePos.x + cos(glm::radians(eyePos.horAngle)), eyePos.y + sin(glm::radians(eyePos.vertAngle)), eyePos.z + sin(glm::radians(eyePos.horAngle))), // look at pos
@@ -200,6 +201,8 @@ void calcUniforms() {
     mvpMatrix = proj * view;  //Product (mvp) matrix
 
     glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &mvpMatrix[0][0]);
+    glm::vec4 eyePosVec = glm::vec4(eyePos.x, eyePos.y, eyePos.z, 1);
+    glUniform4fv(eyePosLoc, 1, &eyePosVec[0]);
 }
 
 void setPolygonMode(bool isWireframe) {
