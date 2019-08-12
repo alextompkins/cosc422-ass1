@@ -37,7 +37,7 @@ struct EyePos {
 } eyePos;
 float lookAtHeight;
 
-bool wireframeMode = false;
+bool wireframeMode = true;
 
 //Generate vertex and element data for the terrain floor
 void generateData() {
@@ -189,7 +189,6 @@ void calcUniforms() {
     glm::mat4 norMatrix = glm::inverse(mvMatrix);
     glm::mat4 mvpMatrix = proj * mvMatrix;
 
-//    view = glm::lookAt(glm::vec3(0.0, 20.0, 30.0), glm::vec3(0.0, 0.0, -40.0), glm::vec3(0.0, 1.0, 0.0)); // view matrix
     mvpMatrix = proj * view;  //Product (mvp) matrix
 
     glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &mvpMatrix[0][0]);
@@ -212,12 +211,50 @@ void display() {
 
     glUseProgram(terrainProgram);
     calcUniforms();
-    setPolygonMode(true);
+    setPolygonMode(wireframeMode);
 	glBindVertexArray(terrainVao);
 	glDrawElements(GL_QUADS, 81 * 4, GL_UNSIGNED_SHORT, NULL);
 
 	glBindVertexArray(0);
 	glFlush();
+}
+
+void special(int key, int x, int y) {
+    const float MOVE_DISTANCE = 1.0;
+
+    switch (key) {
+        case GLUT_KEY_LEFT:
+            eyePos.x -= MOVE_DISTANCE;
+            break;
+        case GLUT_KEY_RIGHT:
+            eyePos.x += MOVE_DISTANCE;
+            break;
+        case GLUT_KEY_UP:
+            eyePos.z -= MOVE_DISTANCE;
+            break;
+        case GLUT_KEY_DOWN:
+            eyePos.z += MOVE_DISTANCE;
+            break;
+    }
+
+    glutPostRedisplay();
+}
+
+void keyboard(unsigned char key, int x, int y) {
+    const float MOVE_DISTANCE = 1.0;
+
+    switch (key) {
+        case ' ':
+            eyePos.y += MOVE_DISTANCE;
+            break;
+        case 'x':
+            eyePos.y -= MOVE_DISTANCE;
+            break;
+        case 'w':
+            wireframeMode = !wireframeMode;
+            break;
+    }
+    glutPostRedisplay();
 }
 
 
@@ -238,6 +275,8 @@ int main(int argc, char **argv) {
 	}
 
 	initialise();
+	glutSpecialFunc(special);
+	glutKeyboardFunc(keyboard);
 	glutDisplayFunc(display);
 	glutMainLoop();
 }
