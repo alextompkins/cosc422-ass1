@@ -21,6 +21,8 @@ void main() {
 
     float relDistance = (dist - D_MIN) / (D_MAX - D_MIN);
     int tessLevel = int(round(relDistance * (L_LOW - L_HIGH) + L_HIGH));
+    if (tessLevel < L_LOW) tessLevel = L_LOW;
+    else if (tessLevel > L_HIGH) tessLevel = L_HIGH;
 
     if (gl_InvocationID == 0) {
         gl_TessLevelOuter[0] = tessLevel;
