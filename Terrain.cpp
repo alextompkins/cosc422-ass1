@@ -23,20 +23,27 @@ using namespace std;
 #define TO_RAD (3.14159265f/180.0f)
 
 GLuint terrainProgram;
-GLuint terrainVao;
-GLuint mvpMatrixLoc, textureLoc;
+GLuint terrainVao, terrainVertsVbo, terrainElemsVbo;
+GLuint mvpMatrixLoc, textureLoc, wireframeFlagLoc;
 
 float verts[100 * 3];       //10x10 grid (100 vertices)
 GLushort elems[81 * 4];       //Element array for 81 quad patches
 
-glm::mat4 projView;
+struct EyePos {
+    float x;
+    float y;
+    float z;
+    float angle;
+} eyePos;
+float lookAtHeight;
+
+bool wireframeMode = false;
 
 //Generate vertex and element data for the terrain floor
 void generateData() {
 	int indx, start;
 	//verts array
-	for (int i = 0; i < 10; i++)   //100 vertices on a 10x10 grid
-	{
+	for (int i = 0; i < 10; i++) {  //100 vertices on a 10x10 grid
 		for (int j = 0; j < 10; j++) {
 			indx = 10 * i + j;
 			verts[3 * indx] = 10 * i - 45;        //x  varies from -45 to +45
@@ -58,7 +65,7 @@ void generateData() {
 	}
 }
 
-//Loads terrain texture
+// Loads terrain texture
 void loadTextures() {
 	GLuint texID;
 	glGenTextures(1, &texID);
@@ -110,64 +117,106 @@ void printLogs(GLuint program) {
 	}
 }
 
-//Initialise the shader program, create and load buffer data
+void setupTerrainProgram() {
+    // Create shaders
+    GLuint shaderv = loadShader(GL_VERTEX_SHADER, "shaders/Terrain.vert");
+    GLuint shaderf = loadShader(GL_FRAGMENT_SHADER, "shaders/Terrain.frag");
+
+    // Attach shaders and link
+    terrainProgram = glCreateProgram();
+    glAttachShader(terrainProgram, shaderv);
+    glAttachShader(terrainProgram, shaderf);
+    glLinkProgram(terrainProgram);
+    printLogs(terrainProgram);
+
+    // Get graphics memory locations for uniform variables
+    mvpMatrixLoc = glGetUniformLocation(terrainProgram, "mvpMatrix");
+    textureLoc = glGetUniformLocation(terrainProgram, "heightMap");
+
+    // Generate VAO and VBOs
+    glGenVertexArrays(1, &terrainVao);
+    glGenBuffers(1, &terrainVertsVbo);
+    glGenBuffers(1, &terrainElemsVbo);
+
+    // Generate vertex & element data (quads)
+    generateData();
+
+    // Generate VAO and VBOs
+    glUseProgram(terrainProgram);
+    glBindVertexArray(terrainVao);
+    glBindBuffer(GL_ARRAY_BUFFER, terrainVertsVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, terrainElemsVbo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elems), elems, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
+}
+
+void initCamera() {
+    eyePos = {
+            0.0,
+            10.0,
+            0.0,
+            270
+    };
+    lookAtHeight = 0.0;
+}
+
 void initialise() {
-	glm::mat4 proj, view;   //Projection and view matrices
-	//--------Load terrain height map-----------
+    initCamera();
+
+    // Create programs
+    setupTerrainProgram();
+
+    // Load textures
 	loadTextures();
-	//--------Load shaders----------------------
-	GLuint shaderv = loadShader(GL_VERTEX_SHADER, "shaders/Terrain.vert");
-	GLuint shaderf = loadShader(GL_FRAGMENT_SHADER, "shaders/Terrain.frag");
-
-	terrainProgram = glCreateProgram();
-	glAttachShader(terrainProgram, shaderv);
-	glAttachShader(terrainProgram, shaderf);
-	glLinkProgram(terrainProgram);
-	printLogs(terrainProgram);
-
-	glUseProgram(terrainProgram);
-
-	mvpMatrixLoc = glGetUniformLocation(terrainProgram, "mvpMatrix");
-	textureLoc = glGetUniformLocation(terrainProgram, "heightMap");
 	glUniform1i(textureLoc, 0);
 
-	//--------Compute matrices----------------------
-	proj = glm::perspective(30.0f * TO_RAD, 1.25f, 20.0f, 500.0f);  // perspective projection matrix
-	view = glm::lookAt(glm::vec3(0.0, 20.0, 30.0), glm::vec3(0.0, 0.0, -40.0), glm::vec3(0.0, 1.0, 0.0)); // view matrix
-	projView = proj * view;  //Product (mvp) matrix
-
-	//---------Load buffer data-----------------------
-	generateData();
-
-	GLuint vboID[2];
-	glGenVertexArrays(1, &terrainVao);
-	glBindVertexArray(terrainVao);
-
-	glGenBuffers(2, vboID);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vboID[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(0);  // Vertex position
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elems), elems, GL_STATIC_DRAW);
-
-	glBindVertexArray(0);
-
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
-// Display function to compute uniform values based on transformation parameters and to draw the scene
-void display() {
-	glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &projView[0][0]);
+void calcUniforms() {
+    glm::mat4 proj = glm::perspective(30.0f * TO_RAD, 1.25f, 20.0f, 500.0f);  // perspective projection matrix
+    glm::mat4 view = glm::lookAt(
+            glm::vec3(eyePos.x, eyePos.y, eyePos.z), // eye pos
+            glm::vec3(eyePos.x + cos(glm::radians(eyePos.angle)), eyePos.y, eyePos.z + sin(glm::radians(eyePos.angle))), // look at pos
+            glm::vec3(0.0, 1.0, 0.0)); // up vector
+    glm::mat4 mvMatrix = view;
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glm::vec4 lightPos = glm::vec4(0.0, 0.0, 500.0, 1.0);
+    glm::vec4 lightEye = view * lightPos;
+
+    glm::mat4 norMatrix = glm::inverse(mvMatrix);
+    glm::mat4 mvpMatrix = proj * mvMatrix;
+
+//    view = glm::lookAt(glm::vec3(0.0, 20.0, 30.0), glm::vec3(0.0, 0.0, -40.0), glm::vec3(0.0, 1.0, 0.0)); // view matrix
+    mvpMatrix = proj * view;  //Product (mvp) matrix
+
+    glUniformMatrix4fv(mvpMatrixLoc, 1, GL_FALSE, &mvpMatrix[0][0]);
+}
+
+void setPolygonMode(bool isWireframe) {
+    glPolygonMode(GL_FRONT_AND_BACK, isWireframe ? GL_LINE : GL_FILL);
+    glUniform1i(wireframeFlagLoc, isWireframe);
+    if (isWireframe) {
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+    } else {
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+    }
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(terrainProgram);
+    calcUniforms();
+    setPolygonMode(true);
 	glBindVertexArray(terrainVao);
 	glDrawElements(GL_QUADS, 81 * 4, GL_UNSIGNED_SHORT, NULL);
+
+	glBindVertexArray(0);
 	glFlush();
 }
 
