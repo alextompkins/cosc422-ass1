@@ -119,13 +119,17 @@ void printLogs(GLuint program) {
 
 void setupTerrainProgram() {
     // Create shaders
-    GLuint shaderv = loadShader(GL_VERTEX_SHADER, "shaders/Terrain.vert");
-    GLuint shaderf = loadShader(GL_FRAGMENT_SHADER, "shaders/Terrain.frag");
+    GLuint shaderVert = loadShader(GL_VERTEX_SHADER, "shaders/Terrain.vert");
+    GLuint shaderTessCont = loadShader(GL_TESS_CONTROL_SHADER, "shaders/Terrain.tesc");
+    GLuint shaderTessEval = loadShader(GL_TESS_EVALUATION_SHADER, "shaders/Terrain.tese");
+    GLuint shaderFrag = loadShader(GL_FRAGMENT_SHADER, "shaders/Terrain.frag");
 
     // Attach shaders and link
     terrainProgram = glCreateProgram();
-    glAttachShader(terrainProgram, shaderv);
-    glAttachShader(terrainProgram, shaderf);
+    glAttachShader(terrainProgram, shaderVert);
+    glAttachShader(terrainProgram, shaderTessCont);
+    glAttachShader(terrainProgram, shaderTessEval);
+    glAttachShader(terrainProgram, shaderFrag);
     glLinkProgram(terrainProgram);
     printLogs(terrainProgram);
 
@@ -173,6 +177,7 @@ void initialise() {
 	glUniform1i(textureLoc, 0);
 
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glPatchParameteri(GL_PATCH_VERTICES, 4);
 }
 
 void calcUniforms() {
@@ -213,7 +218,7 @@ void display() {
     calcUniforms();
     setPolygonMode(wireframeMode);
 	glBindVertexArray(terrainVao);
-	glDrawElements(GL_QUADS, 81 * 4, GL_UNSIGNED_SHORT, NULL);
+	glDrawElements(GL_PATCHES, 81 * 4, GL_UNSIGNED_SHORT, NULL);
 
 	glBindVertexArray(0);
 	glFlush();

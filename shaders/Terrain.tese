@@ -5,13 +5,18 @@ layout(quads, equal_spacing, ccw) in;
 uniform mat4 mvpMatrix;
 vec4 posn;
 
-void main()
-{
+vec4 P(int pos) {
+    return gl_in[pos].gl_Position;
+}
+
+void main() {
     float u = gl_TessCoord.x;
     float v = gl_TessCoord.y;
 
-    // Enter code for posn below.
+    posn = (1 - u) * (1 - v) * P(0)
+         + u * (1 - v)       * P(1)
+         + u * v             * P(2)
+         + (1 - u) * v       * P(3);
 
-    // posn = 
     gl_Position = mvpMatrix * posn;
 }
