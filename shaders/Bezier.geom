@@ -46,8 +46,10 @@ void main() {
         vec4 diffOut = material * diffTerm;
 
         // Compute specular
-        float nDotV = dot(normalEye, viewVec);
+        vec4 normalMvMatrix = inverse(mvMatrix) * normal;
+        float nDotV = dot(normalMvMatrix, viewVec);
         float specTerm = max(nDotV, 0);
+        if (nDotL < 0) specTerm = 0;
         vec4 specOut = white * pow(specTerm, SHININESS);
 
         gl_Position = mvpMatrix * gl_in[i].gl_Position;

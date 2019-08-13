@@ -256,10 +256,10 @@ void calcUniforms() {
             glm::vec3(0.0, 1.0, 0.0)); // up vector
     glm::mat4 mvMatrix = glm::rotate(view, -eyePos.angle * TO_RAD, glm::vec3(0.0, 1.0, 0.0));
 
-    glm::vec4 lightPos = glm::vec4(0.0, 0.0, 500.0, 1.0);
+    glm::vec4 lightPos = glm::vec4(100.0, 150.0, 200.0, 1.0);
     glm::vec4 lightEye = view * lightPos;
 
-    glm::mat4 norMatrix = glm::inverse(mvMatrix);
+    glm::mat4 norMatrix = glm::inverse(view);
     glm::mat4 mvpMatrix = proj * mvMatrix;
 
     glUniformMatrix4fv(mvMatrixLoc, 1, GL_FALSE, &mvMatrix[0][0]);
