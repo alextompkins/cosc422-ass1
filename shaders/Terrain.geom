@@ -3,7 +3,7 @@
 #define TEX_REPEAT_X 5.0
 #define TEX_REPEAT_Z 5.0
 
-#define WATER_GRASS_THRESH 2.5
+#define WATER_GRASS_THRESH 2.0
 #define GRASS_ROCK_THRESH 5.0
 #define ROCK_SNOW_THRESH 7.0
 
@@ -37,15 +37,15 @@ vec4 determineWeights(float height) {
 
     if (height < WATER_GRASS_THRESH) {
         waterWeight = 1;
-    } else if (height < GRASS_ROCK_THRESH - 1) {
+    } else if (height < GRASS_ROCK_THRESH - 0.5) {
         grassWeight = 1;
-    } else if (height < GRASS_ROCK_THRESH + 1) {
-        rockWeight = scaleBetweenThresholds(height, GRASS_ROCK_THRESH - 1, GRASS_ROCK_THRESH + 1);
+    } else if (height < GRASS_ROCK_THRESH + 0.5) {
+        rockWeight = scaleBetweenThresholds(height, GRASS_ROCK_THRESH - 0.5, GRASS_ROCK_THRESH + 0.5);
         grassWeight = 1 - rockWeight;
-    } else if (height < ROCK_SNOW_THRESH - 1) {
+    } else if (height < ROCK_SNOW_THRESH - 0.5) {
         rockWeight = 1;
-    } else if (height < ROCK_SNOW_THRESH + 1) {
-        snowWeight = scaleBetweenThresholds(height, ROCK_SNOW_THRESH - 1, ROCK_SNOW_THRESH + 1);
+    } else if (height < ROCK_SNOW_THRESH + 0.5) {
+        snowWeight = scaleBetweenThresholds(height, ROCK_SNOW_THRESH - 0.5, ROCK_SNOW_THRESH + 0.5);
         rockWeight = 1 - snowWeight;
     } else {
         snowWeight = 1;

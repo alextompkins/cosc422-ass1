@@ -86,7 +86,7 @@ void loadTextures() {
 
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, texID[2]);
-    loadTGA("textures/grassy_hills.tga");
+    loadTGA("textures/grass.tga");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
