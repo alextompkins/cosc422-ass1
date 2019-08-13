@@ -24,7 +24,8 @@ using namespace std;
 
 GLuint terrainProgram;
 GLuint terrainVao, terrainVertsVbo, terrainElemsVbo;
-GLuint mvMatrixLoc, norMatrixLoc, lightPosLoc, mvpMatrixLoc, wireframeFlagLoc, heightMapperLoc, grassTexturerLoc, eyePosLoc;
+GLuint mvMatrixLoc, norMatrixLoc, lightPosLoc, mvpMatrixLoc, wireframeFlagLoc, eyePosLoc,
+    heightMapperLoc, waterTexturerLoc, grassTexturerLoc, rockTexturerLoc, snowTexturerLoc;
 
 float verts[100 * 3];       //10x10 grid (100 vertices)
 GLushort elems[81 * 4];       //Element array for 81 quad patches
@@ -68,8 +69,8 @@ void generateData() {
 
 // Loads terrain texture
 void loadTextures() {
-    GLuint texID[2];
-    glGenTextures(2, texID);
+    GLuint texID[5];
+    glGenTextures(5, texID);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texID[0]);
@@ -79,12 +80,33 @@ void loadTextures() {
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, texID[1]);
+    loadTGA("textures/water.tga");
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, texID[2]);
     loadTGA("textures/grassy_hills.tga");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, texID[3]);
+    loadTGA("textures/arid_rock.tga");
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, texID[4]);
+    loadTGA("textures/snow.tga");
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
     glUniform1i(heightMapperLoc, 0);
-    glUniform1i(grassTexturerLoc, 1);
+    glUniform1i(waterTexturerLoc, 1);
+    glUniform1i(grassTexturerLoc, 2);
+    glUniform1i(rockTexturerLoc, 3);
+    glUniform1i(snowTexturerLoc, 4);
 }
 
 //Loads a shader file and returns the reference to a shader object
@@ -150,10 +172,13 @@ void setupTerrainProgram() {
     norMatrixLoc = glGetUniformLocation(terrainProgram, "norMatrix");
     lightPosLoc = glGetUniformLocation(terrainProgram, "lightPos");
     mvpMatrixLoc = glGetUniformLocation(terrainProgram, "mvpMatrix");
-    heightMapperLoc = glGetUniformLocation(terrainProgram, "heightMapper");
-    grassTexturerLoc = glGetUniformLocation(terrainProgram, "grassTexturer");
     wireframeFlagLoc = glGetUniformLocation(terrainProgram, "wireframeFlag");
     eyePosLoc = glGetUniformLocation(terrainProgram, "eyePos");
+    heightMapperLoc = glGetUniformLocation(terrainProgram, "heightMapper");
+    waterTexturerLoc = glGetUniformLocation(terrainProgram, "waterTexturer");
+    grassTexturerLoc = glGetUniformLocation(terrainProgram, "grassTexturer");
+    rockTexturerLoc = glGetUniformLocation(terrainProgram, "rockTexturer");
+    snowTexturerLoc = glGetUniformLocation(terrainProgram, "snowTexturer");
 
     // Generate VAO and VBOs
     glGenVertexArrays(1, &terrainVao);
