@@ -264,11 +264,17 @@ void keyboard(unsigned char key, int x, int y) {
         case 'x':
             eyePos.y -= MOVE_DISTANCE;
             break;
-        case 't':
+        case 'i':
             eyePos.vertAngle += ANGLE_INCR;
             break;
-        case 'g':
+        case 'k':
             eyePos.vertAngle -= ANGLE_INCR;
+            break;
+        case 'j':
+            eyePos.horAngle -= ANGLE_INCR;
+            break;
+        case 'l':
+            eyePos.horAngle += ANGLE_INCR;
             break;
         case 'w':
             wireframeMode = !wireframeMode;
