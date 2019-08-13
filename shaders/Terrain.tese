@@ -33,5 +33,5 @@ void main() {
     posn.y = height * HEIGHT_SCALE;
 
     // Transform to clip co-ords
-    gl_Position = mvpMatrix * posn;
+    gl_Position = posn;
 }
