@@ -47,8 +47,8 @@ void main() {
 
         // Compute specular
         vec4 normalMvMatrix = inverse(mvMatrix) * normal;
-        float nDotV = dot(normalMvMatrix, viewVec);
-        float specTerm = max(nDotV, 0);
+        float nDotH = dot(normalMvMatrix, halfVec);
+        float specTerm = max(nDotH, 0);
         if (nDotL < 0) specTerm = 0;
         vec4 specOut = white * pow(specTerm, SHININESS);
 
