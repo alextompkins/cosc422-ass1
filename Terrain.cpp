@@ -24,7 +24,7 @@ using namespace std;
 
 GLuint terrainProgram;
 GLuint terrainVao, terrainVertsVbo, terrainElemsVbo;
-GLuint mvMatrixLoc, norMatrixLoc, lightPosLoc, mvpMatrixLoc, wireframeFlagLoc, heightMapperLoc, eyePosLoc;
+GLuint mvMatrixLoc, norMatrixLoc, lightPosLoc, mvpMatrixLoc, wireframeFlagLoc, heightMapperLoc, grassTexturerLoc, eyePosLoc;
 
 float verts[100 * 3];       //10x10 grid (100 vertices)
 GLushort elems[81 * 4];       //Element array for 81 quad patches
@@ -68,14 +68,23 @@ void generateData() {
 
 // Loads terrain texture
 void loadTextures() {
-    GLuint texID;
-    glGenTextures(1, &texID);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texID);
-    loadTGA("textures/HeightMap1.tga");
+    GLuint texID[2];
+    glGenTextures(2, texID);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texID[0]);
+    loadTGA("textures/HeightMap1.tga");
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texID[1]);
+    loadTGA("textures/grassy_hills.tga");
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glUniform1i(heightMapperLoc, 0);
+    glUniform1i(grassTexturerLoc, 1);
 }
 
 //Loads a shader file and returns the reference to a shader object
@@ -142,6 +151,7 @@ void setupTerrainProgram() {
     lightPosLoc = glGetUniformLocation(terrainProgram, "lightPos");
     mvpMatrixLoc = glGetUniformLocation(terrainProgram, "mvpMatrix");
     heightMapperLoc = glGetUniformLocation(terrainProgram, "heightMapper");
+    grassTexturerLoc = glGetUniformLocation(terrainProgram, "grassTexturer");
     wireframeFlagLoc = glGetUniformLocation(terrainProgram, "wireframeFlag");
     eyePosLoc = glGetUniformLocation(terrainProgram, "eyePos");
 
@@ -183,7 +193,6 @@ void initialise() {
 
     // Load textures
     loadTextures();
-    glUniform1i(heightMapperLoc, 0);
 
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glPatchParameteri(GL_PATCH_VERTICES, 4);

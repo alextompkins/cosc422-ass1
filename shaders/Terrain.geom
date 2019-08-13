@@ -1,5 +1,8 @@
 #version 400
 
+#define TEX_REPEAT_X 5.0
+#define TEX_REPEAT_Z 5.0
+
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
@@ -7,11 +10,9 @@ uniform mat4 mvMatrix;
 uniform mat4 norMatrix;
 uniform mat4 mvpMatrix;
 uniform vec4 lightPos;
-out vec4 primColor;
 
-vec4 white = vec4(1.0);
-vec4 grey = vec4(0.2);
-vec4 material = vec4(0.0, 1.0, 1.0, 1.0);
+out float brightness;
+out vec2 texCoord;
 
 vec4 calcTriangleNormal(vec3 p0, vec3 p1, vec3 p2) {
     vec3 a = p1 - p0;
@@ -34,15 +35,18 @@ void main() {
         vec4 lightVec = normalize(lightPos - posnEye);
 
         // Compute ambient
-        vec4 ambOut = grey * material;
+        float ambientTerm = 0.1;
 
         // Compute diffuse
         float nDotL = dot(normalEye, lightVec);
-        float diffTerm = max(nDotL, 0);
-        vec4 diffOut = material * diffTerm;
+        float diffuseTerm = max(nDotL, 0);
+
+        float s = (mod(gl_in[i].gl_Position.x, TEX_REPEAT_X)) / TEX_REPEAT_X;
+        float t = (mod(gl_in[i].gl_Position.z, TEX_REPEAT_Z)) / TEX_REPEAT_Z;
+        texCoord = vec2(s, t);
 
         gl_Position = mvpMatrix * gl_in[i].gl_Position;
-        primColor = ambOut + diffOut;
+        brightness = min(ambientTerm + diffuseTerm, 1.0);
         EmitVertex();
     }
     EndPrimitive();
