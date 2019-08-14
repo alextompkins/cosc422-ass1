@@ -3,8 +3,8 @@
 #define NUM_VERTS 4
 #define D_MIN 10.0
 #define D_MAX 150.0
-#define L_LOW 2
-#define L_HIGH 20
+#define L_LOW 10
+#define L_HIGH 50
 
 layout(vertices = 4) out;
 
