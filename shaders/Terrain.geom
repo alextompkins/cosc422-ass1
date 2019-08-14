@@ -58,7 +58,12 @@ void main() {
     vec3 p1 = gl_in[1].gl_Position.xyz;
     vec3 p2 = gl_in[2].gl_Position.xyz;
 
-    vec4 normal = calcTriangleNormal(p0, p1, p2);
+    vec3 positions[3];
+    for (int i = 0; i < gl_in.length(); i++) {
+        positions[i] = gl_in[i].gl_Position.xyz;
+        positions[i].y = max(positions[i].y, waterLevel);
+    }
+    vec4 normal = calcTriangleNormal(positions[0], positions[1], positions[2]);
 
     // For each of the 3 vertices of each triangle
     for (int i = 0; i < gl_in.length(); i++) {
