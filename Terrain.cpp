@@ -25,7 +25,8 @@ using namespace std;
 GLuint terrainProgram;
 GLuint terrainVao, terrainVertsVbo, terrainElemsVbo;
 GLuint mvMatrixLoc, norMatrixLoc, lightPosLoc, mvpMatrixLoc, wireframeFlagLoc, eyePosLoc,
-    heightMapperLoc, waterTexturerLoc, grassTexturerLoc, rockTexturerLoc, snowTexturerLoc;
+    heightMapperLoc, waterTexturerLoc, grassTexturerLoc, rockTexturerLoc, snowTexturerLoc,
+    waterLevelLoc, snowLevelLoc;
 
 float verts[100 * 3];       //10x10 grid (100 vertices)
 GLushort elems[81 * 4];       //Element array for 81 quad patches
@@ -38,8 +39,10 @@ struct EyePos {
     float vertAngle;
 } eyePos;
 float lookAtHeight;
+float waterLevel = 2.0;
+float snowLevel = 5.0;
 
-bool wireframeMode = true;
+bool wireframeMode = false;
 
 //Generate vertex and element data for the terrain floor
 void generateData() {
@@ -179,6 +182,8 @@ void setupTerrainProgram() {
     grassTexturerLoc = glGetUniformLocation(terrainProgram, "grassTexturer");
     rockTexturerLoc = glGetUniformLocation(terrainProgram, "rockTexturer");
     snowTexturerLoc = glGetUniformLocation(terrainProgram, "snowTexturer");
+    waterLevelLoc = glGetUniformLocation(terrainProgram, "waterLevel");
+    snowLevelLoc = glGetUniformLocation(terrainProgram, "snowLevel");
 
     // Generate VAO and VBOs
     glGenVertexArrays(1, &terrainVao);
@@ -249,6 +254,9 @@ void calcUniforms() {
 
     glm::vec4 eyePosVec = glm::vec4(eyePos.x, eyePos.y, eyePos.z, 1);
     glUniform4fv(eyePosLoc, 1, &eyePosVec[0]);
+
+    glUniform1f(waterLevelLoc, waterLevel);
+    glUniform1f(snowLevelLoc, snowLevel);
 }
 
 void setPolygonMode(bool isWireframe) {
@@ -322,6 +330,24 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case 'w':
             wireframeMode = !wireframeMode;
+            break;
+        case 'r':
+            waterLevel += 0.25;
+            cout << "Water Level: " << waterLevel << endl;
+            break;
+        case 'f':
+            waterLevel -= 0.25;
+            cout << "Water Level: " << waterLevel << endl;
+            break;
+        case 't':
+            snowLevel += 0.25;
+            cout << "Snow Level: " << snowLevel << endl;
+            cout << "Rock Level: " << snowLevel - 2.5 << endl;
+            break;
+        case 'g':
+            snowLevel -= 0.25;
+            cout << "Snow Level: " << snowLevel << endl;
+            cout << "Rock Level: " << snowLevel - 2.0 << endl;
             break;
     }
     glutPostRedisplay();

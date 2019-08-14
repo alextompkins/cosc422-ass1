@@ -3,10 +3,6 @@
 #define TEX_REPEAT_X 5.0
 #define TEX_REPEAT_Z 5.0
 
-#define WATER_GRASS_THRESH 2.0
-#define GRASS_ROCK_THRESH 4.5
-#define ROCK_SNOW_THRESH 7.25
-
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
@@ -14,6 +10,9 @@ uniform mat4 mvMatrix;
 uniform mat4 norMatrix;
 uniform mat4 mvpMatrix;
 uniform vec4 lightPos;
+uniform float waterLevel;
+uniform float snowLevel;
+float rockLevel = snowLevel - 2.0;
 
 out float brightness;
 out vec4 texWeights;
@@ -35,17 +34,17 @@ vec4 determineWeights(float height) {
     float rockWeight = 0;
     float snowWeight = 0;
 
-    if (height < WATER_GRASS_THRESH) {
+    if (height < waterLevel) {
         waterWeight = 1;
-    } else if (height < GRASS_ROCK_THRESH - 0.5) {
+    } else if (height < rockLevel - 0.5) {
         grassWeight = 1;
-    } else if (height < GRASS_ROCK_THRESH + 0.5) {
-        rockWeight = scaleBetweenThresholds(height, GRASS_ROCK_THRESH - 2.5, GRASS_ROCK_THRESH + 2.5);
+    } else if (height < rockLevel + 0.5) {
+        rockWeight = scaleBetweenThresholds(height, rockLevel - 2.5, rockLevel + 2.5);
         grassWeight = 1 - rockWeight;
-    } else if (height < ROCK_SNOW_THRESH - 0.5) {
+    } else if (height < snowLevel - 0.5) {
         rockWeight = 1;
-    } else if (height < ROCK_SNOW_THRESH + 0.5) {
-        snowWeight = scaleBetweenThresholds(height, ROCK_SNOW_THRESH - 0.5, ROCK_SNOW_THRESH + 0.5);
+    } else if (height < snowLevel + 0.5) {
+        snowWeight = scaleBetweenThresholds(height, snowLevel - 0.5, snowLevel + 0.5);
         rockWeight = 1 - snowWeight;
     } else {
         snowWeight = 1;
@@ -70,7 +69,7 @@ void main() {
         texCoord = vec2(s, t);
         texWeights = determineWeights(inPos.y);
 
-        inPos.y = max(inPos.y, WATER_GRASS_THRESH);
+        inPos.y = max(inPos.y, waterLevel);
 
         vec4 posnEye = mvMatrix * inPos;
         vec4 normalEye = norMatrix * normal;
