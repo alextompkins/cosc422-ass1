@@ -37,7 +37,7 @@ struct EyePos {
     float z;
     float horAngle;
     float vertAngle;
-} eyePos;
+} eyePos, lightPos;
 float lookAtHeight;
 float waterLevel = 2.0;
 float snowLevel = 5.0;
@@ -213,6 +213,7 @@ void initCamera() {
             -10
     };
     lookAtHeight = 0.0;
+    lightPos = {0.0, 500.0, -500.0, 1.0};
 }
 
 void initialise() {
@@ -241,8 +242,8 @@ void calcUniforms() {
                       eyePos.z + sin(glm::radians(eyePos.horAngle))), // look at pos
             glm::vec3(0.0, 1.0, 0.0)); // up vector
 
-    glm::vec4 lightPos = glm::vec4(0.0, 500.0, -500.0, 1.0);
-    glm::vec4 lightEye = view * lightPos;
+    glm::vec4 lightVec = glm::vec4(lightPos.x, lightPos.y, lightPos.z, 1.0);
+    glm::vec4 lightEye = view * lightVec;
 
     glm::mat4 norMatrix = glm::inverse(view);
     glm::mat4 mvpMatrix = proj * mvMatrix;  //Product (mvp) matrix
@@ -331,11 +332,11 @@ void keyboard(unsigned char key, int x, int y) {
         case 'w':
             wireframeMode = !wireframeMode;
             break;
-        case 'r':
+        case 'y':
             waterLevel += 0.25;
             cout << "Water Level: " << waterLevel << endl;
             break;
-        case 'f':
+        case 'h':
             waterLevel -= 0.25;
             cout << "Water Level: " << waterLevel << endl;
             break;
@@ -348,6 +349,24 @@ void keyboard(unsigned char key, int x, int y) {
             snowLevel -= 0.25;
             cout << "Snow Level: " << snowLevel << endl;
             cout << "Rock Level: " << snowLevel - 2.0 << endl;
+            break;
+        case 'e':
+            lightPos.z -= MOVE_DISTANCE * 10;
+            break;
+        case 'd':
+            lightPos.z += MOVE_DISTANCE * 10;
+            break;
+        case 's':
+            lightPos.x -= MOVE_DISTANCE * 10;
+            break;
+        case 'f':
+            lightPos.x += MOVE_DISTANCE * 10;
+            break;
+        case 'q':
+            lightPos.y += MOVE_DISTANCE * 10;
+            break;
+        case 'a':
+            lightPos.y -= MOVE_DISTANCE * 10;
             break;
     }
     glutPostRedisplay();
