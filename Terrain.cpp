@@ -308,7 +308,7 @@ void special(int key, int x, int y) {
 
 void keyboard(unsigned char key, int x, int y) {
     const float MOVE_DISTANCE = 1.0;
-    const float ANGLE_INCR = 1.0;
+    const float ANGLE_INCR = 2.0;
 
     switch (key) {
         case ' ':
