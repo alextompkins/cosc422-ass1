@@ -1,7 +1,10 @@
 #version 400
 
-#define TEX_REPEAT_X 5.0
-#define TEX_REPEAT_Z 5.0
+#define X_MIN -45.0
+#define X_MAX 45.0
+#define Z_MIN 0.0
+#define Z_MAX -100.0
+#define TEXTURE_REPEATS 8.0
 #define MAX_DEPTH 5.0
 
 layout (triangles) in;
@@ -71,8 +74,8 @@ void main() {
         vec4 origPos = gl_in[i].gl_Position;
         vec4 newPos = modifiedPos[i];
 
-        float s = (mod(newPos.x, TEX_REPEAT_X)) / TEX_REPEAT_X;
-        float t = (mod(newPos.z, TEX_REPEAT_Z)) / TEX_REPEAT_Z;
+        float s = (newPos.x - X_MIN) / (X_MAX - X_MIN) * TEXTURE_REPEATS;
+        float t = (newPos.z - Z_MIN) / (Z_MAX - Z_MIN) * TEXTURE_REPEATS;
         texCoord = vec2(s, t);
         texWeights = determineWeights(origPos.y);
 
