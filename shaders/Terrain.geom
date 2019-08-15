@@ -2,6 +2,7 @@
 
 #define TEX_REPEAT_X 5.0
 #define TEX_REPEAT_Z 5.0
+#define MAX_DEPTH 5.0
 
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
@@ -58,25 +59,24 @@ void main() {
     vec3 p1 = gl_in[1].gl_Position.xyz;
     vec3 p2 = gl_in[2].gl_Position.xyz;
 
-    vec3 positions[3];
+    vec4 modifiedPos[3];
     for (int i = 0; i < gl_in.length(); i++) {
-        positions[i] = gl_in[i].gl_Position.xyz;
-        positions[i].y = max(positions[i].y, waterLevel);
+        modifiedPos[i] = gl_in[i].gl_Position;
+        modifiedPos[i].y = max(modifiedPos[i].y, waterLevel);
     }
-    vec4 normal = calcTriangleNormal(positions[0], positions[1], positions[2]);
+    vec4 normal = calcTriangleNormal(modifiedPos[0].xyz, modifiedPos[1].xyz, modifiedPos[2].xyz);
 
     // For each of the 3 vertices of each triangle
     for (int i = 0; i < gl_in.length(); i++) {
-        vec4 inPos = gl_in[i].gl_Position;
+        vec4 origPos = gl_in[i].gl_Position;
+        vec4 newPos = modifiedPos[i];
 
-        float s = (mod(inPos.x, TEX_REPEAT_X)) / TEX_REPEAT_X;
-        float t = (mod(inPos.z, TEX_REPEAT_Z)) / TEX_REPEAT_Z;
+        float s = (mod(newPos.x, TEX_REPEAT_X)) / TEX_REPEAT_X;
+        float t = (mod(newPos.z, TEX_REPEAT_Z)) / TEX_REPEAT_Z;
         texCoord = vec2(s, t);
-        texWeights = determineWeights(inPos.y);
+        texWeights = determineWeights(origPos.y);
 
-        inPos.y = max(inPos.y, waterLevel);
-
-        vec4 posnEye = mvMatrix * inPos;
+        vec4 posnEye = mvMatrix * newPos;
         vec4 normalEye = norMatrix * normal;
         vec4 lightVec = normalize(lightPos - posnEye);
 
@@ -87,8 +87,12 @@ void main() {
         float nDotL = dot(normalEye, lightVec);
         float diffuseTerm = max(nDotL, 0);
 
-        gl_Position = mvpMatrix * inPos;
-        brightness = min(ambientTerm + diffuseTerm, 1.0);
+        // Compute depth lighting
+        float depth = newPos.y - origPos.y;
+        float depthTerm = min(depth / MAX_DEPTH, 0.4);
+
+        gl_Position = mvpMatrix * newPos;
+        brightness = min(ambientTerm + diffuseTerm - depthTerm, 1.0);
         EmitVertex();
     }
     EndPrimitive();
