@@ -39,8 +39,8 @@ struct EyePos {
     float vertAngle;
 } eyePos, lightPos;
 float lookAtHeight;
-float waterLevel = 2.0;
-float snowLevel = 5.0;
+float waterLevel = 2.5;
+float snowLevel = 5.5;
 
 bool wireframeMode = false;
 
