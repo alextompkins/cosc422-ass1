@@ -3,7 +3,7 @@
 #define X_MIN -45.0
 #define X_MAX 45.0
 #define Z_MIN 0.0
-#define Z_MAX -100.0
+#define Z_MAX -90.0
 #define TEXTURE_REPEATS 8.0
 #define MAX_DEPTH 5.0
 
