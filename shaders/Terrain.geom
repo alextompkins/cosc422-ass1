@@ -6,6 +6,7 @@
 #define Z_MAX -90.0
 #define TEXTURE_REPEATS 8.0
 #define MAX_DEPTH 5.0
+#define THRESH_SIZE 2.0
 
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
@@ -39,19 +40,19 @@ vec4 determineWeights(float height) {
     float snowWeight = 0;
 
     if (height < waterLevel) {
-        waterWeight = 1;
-    } else if (height < rockLevel - 0.5) {
-        grassWeight = 1;
-    } else if (height < rockLevel + 0.5) {
-        rockWeight = scaleBetweenThresholds(height, rockLevel - 2.5, rockLevel + 2.5);
-        grassWeight = 1 - rockWeight;
-    } else if (height < snowLevel - 0.5) {
-        rockWeight = 1;
-    } else if (height < snowLevel + 0.5) {
-        snowWeight = scaleBetweenThresholds(height, snowLevel - 0.5, snowLevel + 0.5);
-        rockWeight = 1 - snowWeight;
+        waterWeight = 1.0;
+    } else if (height < rockLevel - THRESH_SIZE) {
+        grassWeight = 1.0;
+    } else if (height < rockLevel + THRESH_SIZE) {
+        rockWeight = scaleBetweenThresholds(height, rockLevel - THRESH_SIZE, rockLevel + THRESH_SIZE);
+        grassWeight = 1.0 - rockWeight;
+    } else if (height < snowLevel - THRESH_SIZE) {
+        rockWeight = 1.0;
+    } else if (height < snowLevel + THRESH_SIZE) {
+        snowWeight = scaleBetweenThresholds(height, snowLevel - THRESH_SIZE, snowLevel + THRESH_SIZE);
+        rockWeight = 1.0 - snowWeight;
     } else {
-        snowWeight = 1;
+        snowWeight = 1.0;
     }
 
     return vec4(waterWeight, grassWeight, rockWeight, snowWeight);
