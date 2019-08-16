@@ -17,7 +17,7 @@ uniform mat4 mvpMatrix;
 uniform vec4 lightPos;
 uniform float waterLevel;
 uniform float snowLevel;
-float rockLevel = snowLevel - 2.0;
+float rockLevel = snowLevel - 1.0;
 
 out float brightness;
 out vec4 texWeights;
