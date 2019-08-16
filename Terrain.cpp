@@ -21,6 +21,10 @@ using namespace std;
 
 // CONSTANTS
 #define TO_RAD (3.14159265f/180.0f)
+#define TIMER_INTERVAL 20
+#define WATER_TEXTURE 1
+#define ICE_TEXTURE 5
+#define SUN_RAD 250.0
 
 GLuint terrainProgram;
 GLuint terrainVao, terrainVertsVbo, terrainElemsVbo;
@@ -43,6 +47,7 @@ float waterLevel = 2.5;
 float snowLevel = 5.5;
 
 bool wireframeMode = false;
+bool dayNightCycleEnabled = false;
 
 //Generate vertex and element data for the terrain floor
 void generateData() {
@@ -72,8 +77,8 @@ void generateData() {
 
 // Loads terrain texture
 void loadTextures() {
-    GLuint texID[5];
-    glGenTextures(5, texID);
+    GLuint texID[6];
+    glGenTextures(6, texID);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texID[0]);
@@ -105,8 +110,13 @@ void loadTextures() {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, texID[5]);
+    loadTGA("textures/ice.tga");
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
     glUniform1i(heightMapperLoc, 0);
-    glUniform1i(waterTexturerLoc, 1);
     glUniform1i(grassTexturerLoc, 2);
     glUniform1i(rockTexturerLoc, 3);
     glUniform1i(snowTexturerLoc, 4);
@@ -204,6 +214,11 @@ void setupTerrainProgram() {
     glEnableVertexAttribArray(0);
 }
 
+void calculateLightPos() {
+    lightPos.x = SUN_RAD * glm::sin(glm::radians(lightPos.vertAngle));
+    lightPos.y = SUN_RAD * glm::cos(glm::radians(lightPos.vertAngle));
+}
+
 void initCamera() {
     eyePos = {
             0.0,
@@ -213,7 +228,10 @@ void initCamera() {
             -10
     };
     lookAtHeight = 0.0;
-    lightPos = {0.0, 500.0, -500.0, 1.0};
+
+    lightPos.z = 65.0;
+    lightPos.vertAngle = 60.0;
+    calculateLightPos();
 }
 
 void initialise() {
@@ -258,6 +276,7 @@ void calcUniforms() {
 
     glUniform1f(waterLevelLoc, waterLevel);
     glUniform1f(snowLevelLoc, snowLevel);
+    glUniform1i(waterTexturerLoc, snowLevel - waterLevel < 1 ? ICE_TEXTURE : WATER_TEXTURE);
 }
 
 void setPolygonMode(bool isWireframe) {
@@ -350,26 +369,21 @@ void keyboard(unsigned char key, int x, int y) {
             cout << "Snow Level: " << snowLevel << endl;
             cout << "Rock Level: " << snowLevel - 2.0 << endl;
             break;
-        case 'e':
-            lightPos.z -= MOVE_DISTANCE * 10;
-            break;
-        case 'd':
-            lightPos.z += MOVE_DISTANCE * 10;
-            break;
-        case 's':
-            lightPos.x -= MOVE_DISTANCE * 10;
-            break;
-        case 'f':
-            lightPos.x += MOVE_DISTANCE * 10;
-            break;
         case 'q':
-            lightPos.y += MOVE_DISTANCE * 10;
-            break;
-        case 'a':
-            lightPos.y -= MOVE_DISTANCE * 10;
+            dayNightCycleEnabled = !dayNightCycleEnabled;
             break;
     }
     glutPostRedisplay();
+}
+
+void timer(int value) {
+    if (dayNightCycleEnabled) {
+        lightPos.vertAngle += 1;
+        cout << "sun angle: " << lightPos.vertAngle << endl;
+        calculateLightPos();
+    }
+    glutPostRedisplay();
+    glutTimerFunc(TIMER_INTERVAL, timer, 0);
 }
 
 int main(int argc, char **argv) {
@@ -391,6 +405,7 @@ int main(int argc, char **argv) {
     initialise();
     glutSpecialFunc(special);
     glutKeyboardFunc(keyboard);
+    glutTimerFunc(TIMER_INTERVAL, timer, 0);
     glutDisplayFunc(display);
     glutMainLoop();
 }
