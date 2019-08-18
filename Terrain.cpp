@@ -24,6 +24,8 @@ using namespace std;
 #define TIMER_INTERVAL 20
 #define WATER_TEXTURE 1
 #define ICE_TEXTURE 5
+#define HEIGHTMAP_PRIMARY 0
+#define HEIGHTMAP_SECONDARY 6
 #define SUN_RAD 250.0
 
 GLuint terrainProgram;
@@ -48,6 +50,7 @@ float snowLevel = 5.5;
 
 bool wireframeMode = false;
 bool dayNightCycleEnabled = false;
+int currentHeightMap = HEIGHTMAP_PRIMARY;
 
 //Generate vertex and element data for the terrain floor
 void generateData() {
@@ -77,8 +80,8 @@ void generateData() {
 
 // Loads terrain texture
 void loadTextures() {
-    GLuint texID[6];
-    glGenTextures(6, texID);
+    GLuint texID[7];
+    glGenTextures(7, texID);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texID[0]);
@@ -116,7 +119,12 @@ void loadTextures() {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    glUniform1i(heightMapperLoc, 0);
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, texID[6]);
+    loadTGA("textures/HeightMap2.tga");
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
     glUniform1i(grassTexturerLoc, 2);
     glUniform1i(rockTexturerLoc, 3);
     glUniform1i(snowTexturerLoc, 4);
@@ -277,6 +285,7 @@ void calcUniforms() {
     glUniform1f(waterLevelLoc, waterLevel);
     glUniform1f(snowLevelLoc, snowLevel);
     glUniform1i(waterTexturerLoc, snowLevel - waterLevel < 1 ? ICE_TEXTURE : WATER_TEXTURE);
+    glUniform1i(heightMapperLoc, currentHeightMap);
 }
 
 void setPolygonMode(bool isWireframe) {
@@ -371,6 +380,12 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case 'q':
             dayNightCycleEnabled = !dayNightCycleEnabled;
+            break;
+        case '1':
+            currentHeightMap = HEIGHTMAP_PRIMARY;
+            break;
+        case '2':
+            currentHeightMap = HEIGHTMAP_SECONDARY;
             break;
     }
     glutPostRedisplay();
