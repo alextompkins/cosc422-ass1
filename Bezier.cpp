@@ -359,7 +359,8 @@ void keyboard(unsigned char key, int x, int y) {
             wireframeMode = !wireframeMode;
             break;
         case ' ':
-            hasExploded = true;
+            hasExploded = !hasExploded;
+            timeSinceExplosion = 0;
             break;
     }
     glutPostRedisplay();
