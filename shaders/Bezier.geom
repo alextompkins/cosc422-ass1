@@ -13,7 +13,7 @@ out vec4 primColor;
 
 vec4 white = vec4(1.0);
 vec4 grey = vec4(0.2);
-vec4 material = vec4(0.0, 1.0, 1.0, 1.0);
+vec4 material = vec4(0.2, 0.7, 0.0, 1.0);
 
 vec4 calcTriangleNormal(vec3 p0, vec3 p1, vec3 p2) {
     vec3 a = p1 - p0;
