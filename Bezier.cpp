@@ -377,7 +377,7 @@ void timer(int value) {
 int main(int argc, char **argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH);
-	glutInitWindowSize(500, 500);
+	glutInitWindowSize(800, 800);
 	glutCreateWindow(MODEL_FILENAME);
 	glutInitContextVersion(4, 2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
